@@ -4,11 +4,11 @@ A monorepo for smart contracts and subgraphs.
 
 ### Smart Contracts
 
-| Name                                           | Description                                     |
-| ---------------------------------------------- | ----------------------------------------------- |
-| `@vahatra/contracts-v20`                       | TODO                                            |
-| `@vahatra/contracts-v721`                      | TODO                                            |
-| [`@vahatra/contracts-v1155`](/contracts/v1155) | An ERC1155 token with a slightly modified event |
+| Name                                           | Description                  |
+| ---------------------------------------------- | ---------------------------- |
+| `@vahatra/contracts-v20`                       | TODO                         |
+| `@vahatra/contracts-v721`                      | TODO                         |
+| [`@vahatra/contracts-v1155`](/contracts/v1155) | A token based on the ERC1155 |
 
 ### Subgraphs for Grapnode
 
