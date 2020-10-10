@@ -1,0 +1,12 @@
+{
+  "name": "vahatra-monorepo",
+  "private": true,
+  "workspaces": [
+    "contracts/*",
+    "subgraphs/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "lerna": "^3.22.1"
+  }
+}
