@@ -3,7 +3,7 @@ pragma solidity ^0.6.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./ERC1155.sol";
+import "./VToken.sol";
 import "./interfaces/IERC1155Mintable.sol";
 
 /// @dev Mintable form of ERC1155
@@ -30,10 +30,7 @@ contract ERC1155Mintable is IERC1155Mintable, ERC1155 {
     /// @param uri URI of token
     /// @param isNF is non-fungible token
     /// @return type_ of token (a unique identifier)
-    function create(string calldata uri, bool isNF)
-        external
-        returns (uint256 type_)
-    {
+    function create(string calldata uri, bool isNF) external returns (uint256 type_) {
         // Store the type in the upper 128 bits
         type_ = (++nonce << 128);
 
@@ -78,10 +75,7 @@ contract ERC1155Mintable is IERC1155Mintable, ERC1155 {
         uint256[] calldata quantities
     ) external creatorOnly(id) {
         // sanity checks
-        require(
-            isFungible(id),
-            "TRIED_TO_MINT_FUNGIBLE_FOR_NON_FUNGIBLE_TOKEN"
-        );
+        require(isFungible(id), "TRIED_TO_MINT_FUNGIBLE_FOR_NON_FUNGIBLE_TOKEN");
 
         // mint tokens
         for (uint256 i = 0; i < to.length; ++i) {
@@ -99,18 +93,14 @@ contract ERC1155Mintable is IERC1155Mintable, ERC1155 {
 
             // if `to` is a contract then trigger its callback
             if (dst.isContract()) {
-                bytes4 callbackReturnValue = IERC1155Receiver(dst)
-                    .onERC1155Received(
+                bytes4 callbackReturnValue = IERC1155Receiver(dst).onERC1155Received(
                     msg.sender,
                     msg.sender,
                     id,
                     quantity,
                     ""
                 );
-                require(
-                    callbackReturnValue == ERC1155_RECEIVED,
-                    "BAD_RECEIVER_RETURN_VALUE"
-                );
+                require(callbackReturnValue == ERC1155_RECEIVED, "BAD_RECEIVER_RETURN_VALUE");
             }
         }
     }
@@ -118,16 +108,10 @@ contract ERC1155Mintable is IERC1155Mintable, ERC1155 {
     /// @dev mints a non-fungible token
     /// @param type_ token type
     /// @param to beneficiaries of minted tokens
-    function mintNonFungible(uint256 type_, address[] calldata to)
-        external
-        creatorOnly(type_)
-    {
+    function mintNonFungible(uint256 type_, address[] calldata to) external creatorOnly(type_) {
         // No need to check this is a nf type rather than an id since
         // creatorOnly() will only let a type pass through.
-        require(
-            isNonFungible(type_),
-            "TRIED_TO_MINT_NON_FUNGIBLE_FOR_FUNGIBLE_TOKEN"
-        );
+        require(isNonFungible(type_), "TRIED_TO_MINT_NON_FUNGIBLE_FOR_FUNGIBLE_TOKEN");
 
         // Index are 1-based.
         uint256 index = maxIndex[type_] + 1;
@@ -146,12 +130,8 @@ contract ERC1155Mintable is IERC1155Mintable, ERC1155 {
 
             // if `to` is a contract then trigger its callback
             if (dst.isContract()) {
-                bytes4 callbackReturnValue = IERC1155Receiver(dst)
-                    .onERC1155Received(msg.sender, msg.sender, id, 1, "");
-                require(
-                    callbackReturnValue == ERC1155_RECEIVED,
-                    "BAD_RECEIVER_RETURN_VALUE"
-                );
+                bytes4 callbackReturnValue = IERC1155Receiver(dst).onERC1155Received(msg.sender, msg.sender, id, 1, "");
+                require(callbackReturnValue == ERC1155_RECEIVED, "BAD_RECEIVER_RETURN_VALUE");
             }
         }
 
