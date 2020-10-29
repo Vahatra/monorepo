@@ -4,16 +4,13 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "./interfaces/IERC1155.sol";
-import "./interfaces/IERC1155Receiver.sol";
+import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "./MixinNonFungibleToken.sol";
+import "./SwapVerifier.sol";
 
-contract VToken is IERC1155, MixinNonFungibleToken {
+contract VToken is SwapVerifier, MixinNonFungibleToken, Initializable {
     using Address for address;
     using SafeMath for uint256;
-
-    bytes4 public constant ERC1155_RECEIVED = 0xf23a6e61;
-    bytes4 public constant ERC1155_BATCH_RECEIVED = 0xbc197c81;
 
     /// token nonce
     uint256 internal nonce;
@@ -42,10 +39,21 @@ contract VToken is IERC1155, MixinNonFungibleToken {
         _;
     }
 
+    /// INIT
+
+    function initialize(address[] calldata _defaultOperators, uint256 _granularity) external initializer {
+        granularity = _granularity;
+        defaultOperators = _defaultOperators;
+
+        for (uint256 i = 0; i < defaultOperators.length; i++) {
+            isDefaultOperators[defaultOperators[i]] = true;
+        }
+    }
+
     /// EVENT
 
     event Sent(
-        address indexed operator,
+        address operator,
         address indexed from,
         address indexed to,
         uint256 indexed id,
@@ -54,7 +62,7 @@ contract VToken is IERC1155, MixinNonFungibleToken {
         bytes operatorData
     );
     event Minted(
-        address indexed operator,
+        address operator,
         address indexed to,
         uint256 indexed id,
         uint256 amount,
@@ -62,7 +70,7 @@ contract VToken is IERC1155, MixinNonFungibleToken {
         bytes operatorData
     );
     event Burned(
-        address indexed operator,
+        address operator,
         address indexed from,
         uint256 indexed id,
         uint256 amount,
@@ -78,21 +86,20 @@ contract VToken is IERC1155, MixinNonFungibleToken {
         require(_amount % granularity == 0, "NOT_MULTIPLE_OF_GRANULARITY");
     }
 
-    function granularity() external view returns (uint256) {
-        return granularity;
-    }
+    // function granularity() external view returns (uint256) {
+    //     return granularity;
+    // }
 
-    function defaultOperators() external view returns (address[] memory) {
-        return defaultOperators;
-    }
+    // function defaultOperators() external view returns (address[] memory) {
+    //     return defaultOperators;
+    // }
 
     /// CREATE
 
     /// @dev creates a new token
-    /// @param _uri URI of token
     /// @param _isNF is non-fungible token
     /// @return type_ of token (a unique identifier)
-    function create(string calldata _uri, bool _isNF) external returns (uint256 type_) {
+    function create(bool _isNF) external returns (uint256 type_) {
         // Store the type in the upper 128 bits
         type_ = (++nonce << 128);
 
@@ -106,17 +113,6 @@ contract VToken is IERC1155, MixinNonFungibleToken {
 
         // emit a Sent event with Create semantic to help with discovery.
         emit Sent(msg.sender, address(0), address(0), type_, 0, "", "");
-    }
-
-    /// @dev creates a new token
-    /// @param _type of token
-    /// @param _uri URI of token
-    function createWithType(uint256 _type, string calldata _uri) external {
-        // This will allow restricted access to creators.
-        creators[_type] = msg.sender;
-
-        // emit a Sent event with Create semantic to help with discovery.
-        emit Sent(msg.sender, address(0), address(0), _type, 0, "", "");
     }
 
     /// MINT
@@ -133,16 +129,15 @@ contract VToken is IERC1155, MixinNonFungibleToken {
         uint256[] calldata _amounts,
         bytes calldata _data,
         bytes calldata _operatorData
-    ) external creatorOnly(id) {
-        // sanity checks
-        require(_to != address(0x0), "CANNOT_MINT_FOR_ADDRESS_ZERO");
-        require(isFungible(id), "TRIED_TO_MINT_FUNGIBLE_FOR_NON_FUNGIBLE_TOKEN");
+    ) external creatorOnly(_id) {
+        require(isFungible(_id), "TRIED_TO_MINT_FUNGIBLE_FOR_NON_FUNGIBLE_TOKEN");
         // HERE need to check contract caller
 
         // mint tokens
         for (uint256 i = 0; i < _to.length; ++i) {
             // cache to reduce number of loads
             address to = _to[i];
+            require(to != address(0), "CANNOT_MINT_FOR_ADDRESS_ZERO");
             uint256 amount = _amounts[i];
 
             // Grant the items to the caller
@@ -167,23 +162,23 @@ contract VToken is IERC1155, MixinNonFungibleToken {
     ) external creatorOnly(_type) {
         // No need to check this is a nf type rather than an id since
         // creatorOnly() will only let a type pass through.
-        require(_to != address(0x0), "CANNOT_MINT_FOR_ADDRESS_ZERO");
         require(isNonFungible(_type), "TRIED_TO_MINT_NON_FUNGIBLE_FOR_FUNGIBLE_TOKEN");
 
         // Index are 1-based.
         uint256 index = maxIndex[_type] + 1;
 
-        for (uint256 i = 0; i < to.length; ++i) {
+        for (uint256 i = 0; i < _to.length; ++i) {
             // cache to reduce number of loads
-            address to = to[i];
+            address to = _to[i];
+            require(to != address(0), "CANNOT_MINT_FOR_ADDRESS_ZERO");
             uint256 id = _type | (index + i);
 
             nfOwners[id] = to;
 
             // NFT base type balance
-            balances[_type][to] = quantity.add(balances[_type][to]);
+            balances[_type][to] = 1;
 
-            emit Minted(msg.sender, to, _id, 1, _data, _operatorData);
+            emit Minted(msg.sender, to, id, 1, _data, _operatorData);
         }
 
         // record the `maxIndex` of this nft type
@@ -193,91 +188,18 @@ contract VToken is IERC1155, MixinNonFungibleToken {
 
     /// SEND
 
-    /// @notice Sends amount of an _id from msg.sender to the _to address specified.
-    /// @param _to      Target address
-    /// @param _id      ID of the token type
-    /// @param _amount   Transfer amount
-    /// @param _data    Additional data with no specified format
-    function send(
-        address _to,
-        uint256 _id,
-        uint256 _amount,
-        bytes calldata _data
-    ) external {
-        _send(msg.sender, msg.sender, _to, _id, _amount, _data, "");
-    }
-
-    /// @notice Sends _amount of an _id from the _from address to the _to address specified.
-    /// @param _from    Source address
-    /// @param _to      Target address
-    /// @param _id      ID of the token type
-    /// @param _amount   Transfer amount
-    /// @param _data    Additional data with no specified format
-    /// @param _operatorData Additional data with no specified format
-    function operatorSend(
-        address _from,
-        address _to,
-        uint256 _id,
-        uint256 _amount,
-        bytes calldata _data,
-        bytes calldata _operatorData
-    ) external {
-        require(_isOperatorFor(msg.sender, from), "INSUFFICIENT_ALLOWANCE");
-        _send(msg.sender, _from, _to, _id, _amount, _data, _operatorData);
-    }
-
-    /// @notice Actually make the transfer.
-    /// @param _operator msg.sender
-    /// @param _from    Source address
-    /// @param _to      Target address
-    /// @param _id      ID of the token type
-    /// @param _amount   Transfer amount
-    /// @param _data    Additional data with no specified format
-    /// @param _operatorData Additional data with no specified format
-    function _send(
-        address _operator,
-        address _from,
-        address _to,
-        uint256 _id,
-        uint256 _amount,
-        bytes calldata _data,
-        bytes calldata _operatorData
-    ) internal {
-        require(to != address(0x0), "CANNOT_TRANSFER_TO_ADDRESS_ZERO");
-
-        // perform transfer
-        if (isNonFungible(_id)) {
-            require(_amount == 1, "AMOUNT_EQUAL_TO_ONE_REQUIRED");
-            require(nfOwners[_id] == _from, "NFT_NOT_OWNED_BY_FROM_ADDRESS");
-            nfOwners[_id] = _to;
-            // Keep the balance of NF type in base type id
-            uint256 baseType = getNonFungibleBaseType(_id);
-            balances[baseType][_from] = balances[baseType][_from].sub(_amount);
-            balances[baseType][_to] = balances[baseType][_to].add(_amount);
-        } else {
-            _checkGranularity(_amount);
-            balances[_id][_from] = balances[_id][_from].sub(_amount);
-            balances[_id][_to] = balances[_id][_to].add(_amount);
-        }
-        emit Sent(_operator, _from, _to, _id, _amount, _data, _operatorData);
-    }
-
-    /// BATCH
-
     /// @notice Send multiple types of Tokens in one transfer from msg.sender.
     /// @param _to      Target addresses
     /// @param _ids     IDs of each token type
     /// @param _amounts  Transfer amounts per token type
     /// @param _data    Additional data with no specified format
-    /// @param _operatorData Additional data with no specified format
-    function batchSend(
+    function send(
         address _to,
         uint256[] calldata _ids,
         uint256[] calldata _amounts,
-        bytes calldata _data,
-        bytes calldata _operatorData
+        bytes calldata _data
     ) external {
-        _batchSend(msg.sender, msg.sender, _to, _ids, _amounts, _data, "");
+        _send(msg.sender, msg.sender, _to, _ids, _amounts, _data, "");
     }
 
     /// @notice Send multiple types of Tokens in one transfer from the _from address.
@@ -287,7 +209,7 @@ contract VToken is IERC1155, MixinNonFungibleToken {
     /// @param _amounts  Transfer amounts per token type
     /// @param _data    Additional data with no specified format
     /// @param _operatorData Additional data with no specified format
-    function operatorBatchSend(
+    function operatorSend(
         address _from,
         address _to,
         uint256[] calldata _ids,
@@ -296,7 +218,7 @@ contract VToken is IERC1155, MixinNonFungibleToken {
         bytes calldata _operatorData
     ) external {
         require(_isOperatorFor(msg.sender, _from), "INSUFFICIENT_ALLOWANCE");
-        _batchSend(msg.sender, _from, _to, _ids, _amounts, _data, _operatorData);
+        _send(msg.sender, _from, _to, _ids, _amounts, _data, _operatorData);
     }
 
     /// @notice Actually make the transfers.
@@ -307,14 +229,14 @@ contract VToken is IERC1155, MixinNonFungibleToken {
     /// @param _amounts  Transfer amounts per token type
     /// @param _data    Additional data with no specified format
     /// @param _operatorData Additional data with no specified format
-    function _batchSend(
+    function _send(
         address _operator,
         address _from,
         address _to,
-        uint256[] calldata _ids,
-        uint256[] calldata _amounts,
-        bytes calldata _data,
-        bytes calldata _operatorData
+        uint256[] memory _ids,
+        uint256[] memory _amounts,
+        bytes memory _data,
+        bytes memory _operatorData
     ) internal {
         // sanity checks
         require(_to != address(0x0), "CANNOT_TRANSFER_TO_ADDRESS_ZERO");
@@ -329,7 +251,7 @@ contract VToken is IERC1155, MixinNonFungibleToken {
             if (isNonFungible(id)) {
                 require(amount == 1, "AMOUNT_EQUAL_TO_ONE_REQUIRED");
                 require(nfOwners[id] == _from, "NFT_NOT_OWNED_BY_FROM_ADDRESS");
-                nfOwners[id] = to;
+                nfOwners[id] = _to;
                 // Keep the balance of NF type in base type id
                 uint256 baseType = getNonFungibleBaseType(id);
                 balances[baseType][_from] = balances[baseType][_from].sub(amount);
@@ -343,101 +265,42 @@ contract VToken is IERC1155, MixinNonFungibleToken {
         }
     }
 
-    function updateBalance(
-        address _from,
-        address _to,
-        uint256 _id,
-        uint256 _amount
-    ) internal {
-        if (isNonFungible(_id)) {
-            require(amount == 1, "AMOUNT_EQUAL_TO_ONE_REQUIRED");
-            require(nfOwners[_id] == _from, "NFT_NOT_OWNED_BY_FROM_ADDRESS");
-            nfOwners[_id] = _to;
-            // Keep the balance of NF type in base type id
-            uint256 baseType = getNonFungibleBaseType(_id);
-            balances[baseType][_from] = balances[baseType][_from].sub(amount);
-            if (_to != address(0)) {
-                balances[baseType][_to] = balances[baseType][_to].add(amount);
-            }
-        } else {
-            _checkGranularity(amount);
-            balances[_id][_from] = balances[_id][_from].sub(amount);
-            balances[_id][_to] = balances[_id][_to].add(amount);
-        }
+    /// SWAP
+
+    /// @notice Swap tokens
+    /// @param _swap Swap data
+    /// @param _nonce Contract state required to match the signature
+    /// @param _expiry Time at which to expire the signature
+    /// @param _v Recovery byte of the signature
+    /// @param _r Half of the ECDSA signature pair
+    /// @param _s Half of the ECDSA signature pair
+    /// @param _data    Additional data with no specified format
+    function swap(
+        SwapLib.Swap memory _swap,
+        uint256 _nonce,
+        uint256 _expiry,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s,
+        bytes memory _data
+    ) public {
+        address signer = SwapVerify(_swap, _nonce, _expiry, _v, _r, _s);
+        _send(msg.sender, msg.sender, signer, _swap.senderTokenIds, _swap.senderTokenAmounts, _data, "");
+        _send(signer, signer, msg.sender, _swap.signerTokenIds, _swap.signerTokenAmounts, _data, "");
     }
 
     /// BURN
 
     /// @notice Burn _value amount of an _id from msg.sender.
-    /// @param _id      ID of the token type
-    /// @param _amount   Burn amount
-    /// @param _data    Additional data with no specified format
-    function burn(
-        uint256 _id,
-        uint256 _amount,
-        bytes calldata _data
-    ) external {
-        _burn(msg.sender, msg.sender, _id, _amount, _data, "");
-    }
-
-    /// @notice Burn _value amount of an _id from _from.
-    /// @param _from    Source address
-    /// @param _id      ID of the token type
-    /// @param _amount   Burn amount
-    /// @param _data    Additional data with no specified format
-    /// @param _operatorData Additional data with no specified format
-    function operatorBurn(
-        address _from,
-        uint256 _id,
-        uint256 _amount,
-        bytes calldata _data,
-        bytes calldata _operatorData
-    ) external {
-        require(_isOperatorFor(msg.sender, _from), "INSUFFICIENT_ALLOWANCE");
-        _burn(msg.sender, _from, _id, _amount, _data, _operatorData);
-    }
-
-    /// @notice Actually make the burnning.
-    /// @param _operator msg.sender
-    /// @param _from    Source address
-    /// @param _id      ID of the token type
-    /// @param _amount   Burn amount
-    /// @param _data    Additional data with no specified format
-    /// @param _operatorData Additional data with no specified format
-    function _burn(
-        address _operator,
-        address _from,
-        uint256 _id,
-        uint256 _amount,
-        bytes memory _data,
-        bytes memory _operatorData
-    ) internal {
-        require(_from != address(0), "CANNOT_BURN_FROM_ADDRESS_ZERO");
-        _balances[_from] = _balances[_from].sub(_amount);
-
-        if (isNonFungible(_id)) {
-            require(_amount == 1, "AMOUNT_EQUAL_TO_ONE_REQUIRED");
-            require(nfOwners[id] == _from, "NFT_NOT_OWNED_BY_FROM_ADDRESS");
-            nfOwners[_id] == address(0);
-            uint256 baseType = getNonFungibleBaseType(_id);
-            balances[baseType][_from] = balances[baseType][_from].sub(_amount);
-        } else {
-            _checkGranularity(_amount);
-            balances[_id][_from] = balances[_id][_from].sub(_amount);
-        }
-        emit Burned(_operator, _from, _id, _amount, _data, _operatorData);
-    }
-
-    /// @notice Burn _value amount of an _id from msg.sender.
     /// @param _ids      IDs of the token type
     /// @param _amounts  Burn amounts
     /// @param _data     Additional data with no specified format
-    function burnBatch(
-        uint256 _ids,
-        uint256 _amounts,
+    function burn(
+        uint256[] calldata _ids,
+        uint256[] calldata _amounts,
         bytes calldata _data
     ) external {
-        _burnBatch(msg.sender, msg.sender, _ids, _amounts, _data, "");
+        _burn(msg.sender, msg.sender, _ids, _amounts, _data, "");
     }
 
     /// @notice Burn _value amount of an _id from _from.
@@ -446,34 +309,33 @@ contract VToken is IERC1155, MixinNonFungibleToken {
     /// @param _amounts   Burn amount
     /// @param _data    Additional data with no specified format
     /// @param _operatorData Additional data with no specified format
-    function operatorBurnBatch(
+    function operatorBurn(
         address _from,
-        uint256 _ids,
-        uint256 _amounts,
+        uint256[] calldata _ids,
+        uint256[] calldata _amounts,
         bytes calldata _data,
         bytes calldata _operatorData
     ) external {
         require(_isOperatorFor(msg.sender, _from), "INSUFFICIENT_ALLOWANCE");
-        _burnBatch(msg.sender, _from, _ids, _amounts, _data, _operatorData);
+        _burn(msg.sender, _from, _ids, _amounts, _data, _operatorData);
     }
 
     /// @notice Actually make the burnning.
     /// @param _operator msg.sender
     /// @param _from    Source address
-    /// @param _ids     ID of the token type
+    /// @param _ids     IDs of the token type
     /// @param _amounts Burn amounts
     /// @param _data    Additional data with no specified format
     /// @param _operatorData Additional data with no specified format
-    function _burnBatch(
+    function _burn(
         address _operator,
         address _from,
-        uint256 _ids,
-        uint256 _amounts,
+        uint256[] memory _ids,
+        uint256[] memory _amounts,
         bytes memory _data,
         bytes memory _operatorData
     ) internal {
         require(_from != address(0), "CANNOT_BURN_FROM_ADDRESS_ZERO");
-        _balances[_from] = _balances[_from].sub(_amount);
 
         // perform transfers
         for (uint256 i = 0; i < _ids.length; ++i) {
@@ -496,11 +358,6 @@ contract VToken is IERC1155, MixinNonFungibleToken {
     }
 
     /// OPERATOR
-
-    /// @notice Returns the list of default operators as defined by the token contract.
-    function defaultOperators() external view returns (address[] memory) {
-        return defaultOperators;
-    }
 
     /// @notice Set a third party operator address as an operator of msg.sender to send
     /// and burn tokens on its behalf.
@@ -540,7 +397,7 @@ contract VToken is IERC1155, MixinNonFungibleToken {
     function _isOperatorFor(address _operator, address _holder) internal view returns (bool) {
         return
             _holder == _operator ||
-            (isDefaultOperators[operator] && !revokedDefaultOperators[_holder][_operator]) ||
+            (isDefaultOperators[_operator] && !revokedDefaultOperators[_holder][_operator]) ||
             operators[_holder][_operator];
     }
 
@@ -560,7 +417,7 @@ contract VToken is IERC1155, MixinNonFungibleToken {
     /// @notice Get the balance of multiple account/token pairs
     /// @param _owners The addresses of the token holders
     /// @param _ids    ID of the Tokens
-    /// @return        The _owner's balance of the Token types requested
+    /// @return balances_   The _owner's balance of the Token types requested
     function balanceOfBatch(address[] calldata _owners, uint256[] calldata _ids)
         external
         view
