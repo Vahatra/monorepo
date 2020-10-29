@@ -2,7 +2,7 @@
 pragma solidity ^0.6.0;
 pragma experimental ABIEncoderV2;
 
-contract MixinNonFungibleToken {
+contract MixinNF {
     /// Use a split bit implementation.
     /// Store the type in the upper 128 bits..
     uint256 internal constant TYPE_MASK = uint256(uint128(~0)) << 128;

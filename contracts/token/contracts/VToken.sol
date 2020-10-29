@@ -2,13 +2,19 @@
 pragma solidity ^0.6.0;
 pragma experimental ABIEncoderV2;
 
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
-import "./MixinNonFungibleToken.sol";
+import "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
+import "./Interfaces/IToken.sol";
+import "./Interfaces/ITokenRecipient.sol";
+import "./Interfaces/ITokenSender.sol";
+import "./MixinNF.sol";
 import "./SwapVerifier.sol";
 
-contract VToken is SwapVerifier, MixinNonFungibleToken, Initializable {
+contract Token is IToken, SwapVerifier, MixinNF, Initializable, Pausable, AccessControl {
     using Address for address;
     using SafeMath for uint256;
 
@@ -22,16 +28,24 @@ contract VToken is SwapVerifier, MixinNonFungibleToken, Initializable {
     mapping(uint256 => uint256) public maxIndex;
 
     /// granularity for fungible tokens.
-    uint256 internal granularity;
+    uint256 internal granNF;
+
+    IERC1820Registry private erc1820;
 
     /// balance
     mapping(uint256 => mapping(address => uint256)) internal balances;
 
     /// operators
-    address[] internal defaultOperators;
+    address[] internal arrayDefaultOperators;
     mapping(address => bool) internal isDefaultOperators;
     mapping(address => mapping(address => bool)) internal operators;
     mapping(address => mapping(address => bool)) internal revokedDefaultOperators;
+
+    bytes32 private TOKENS_SENDER_INTERFACE_HASH;
+    bytes32 private TOKENS_RECIPIENT_INTERFACE_HASH;
+
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
 
     /// asserts token is owned by msg.sender
     modifier creatorOnly(uint256 _id) {
@@ -41,65 +55,41 @@ contract VToken is SwapVerifier, MixinNonFungibleToken, Initializable {
 
     /// INIT
 
-    function initialize(address[] calldata _defaultOperators, uint256 _granularity) external initializer {
-        granularity = _granularity;
-        defaultOperators = _defaultOperators;
+    function initialize(address[] calldata _defaultOperators, uint256 _granNF) external initializer {
+        granNF = _granNF;
+        arrayDefaultOperators = _defaultOperators;
 
-        for (uint256 i = 0; i < defaultOperators.length; i++) {
-            isDefaultOperators[defaultOperators[i]] = true;
+        for (uint256 i = 0; i < arrayDefaultOperators.length; i++) {
+            isDefaultOperators[arrayDefaultOperators[i]] = true;
         }
+
+        TOKENS_SENDER_INTERFACE_HASH = keccak256("ITokenSender");
+        TOKENS_RECIPIENT_INTERFACE_HASH = keccak256("ITokenRecipient");
+
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
-
-    /// EVENT
-
-    event Sent(
-        address operator,
-        address indexed from,
-        address indexed to,
-        uint256 indexed id,
-        uint256 amount,
-        bytes data,
-        bytes operatorData
-    );
-    event Minted(
-        address operator,
-        address indexed to,
-        uint256 indexed id,
-        uint256 amount,
-        bytes data,
-        bytes operatorData
-    );
-    event Burned(
-        address operator,
-        address indexed from,
-        uint256 indexed id,
-        uint256 amount,
-        bytes data,
-        bytes operatorData
-    );
-    event AuthorizedOperator(address indexed operator, address indexed holder);
-    event RevokedOperator(address indexed operator, address indexed holder);
 
     /// OTHER
 
     function _checkGranularity(uint256 _amount) internal view {
-        require(_amount % granularity == 0, "NOT_MULTIPLE_OF_GRANULARITY");
+        require(_amount % granNF == 0, "NOT_MULTIPLE_OF_GRANULARITY");
     }
 
-    // function granularity() external view returns (uint256) {
-    //     return granularity;
-    // }
+    function granularity() external view returns (uint256) {
+        return granNF;
+    }
 
-    // function defaultOperators() external view returns (address[] memory) {
-    //     return defaultOperators;
-    // }
+    function defaultOperators() external view returns (address[] memory) {
+        return arrayDefaultOperators;
+    }
 
     /// CREATE
 
     /// @dev creates a new token
     /// @param _isNF is non-fungible token
     /// @return type_ of token (a unique identifier)
-    function create(bool _isNF) external returns (uint256 type_) {
+    function create(bool _isNF) external whenNotPaused returns (uint256 type_) {
+        require(hasRole(MINTER_ROLE, msg.sender), "CALLER_CANNOT_MINT_OR_CREATE");
         // Store the type in the upper 128 bits
         type_ = (++nonce << 128);
 
@@ -129,7 +119,8 @@ contract VToken is SwapVerifier, MixinNonFungibleToken, Initializable {
         uint256[] calldata _amounts,
         bytes calldata _data,
         bytes calldata _operatorData
-    ) external creatorOnly(_id) {
+    ) external whenNotPaused creatorOnly(_id) {
+        require(hasRole(MINTER_ROLE, msg.sender), "CALLER_CANNOT_MINT_OR_CREATE");
         require(isFungible(_id), "TRIED_TO_MINT_FUNGIBLE_FOR_NON_FUNGIBLE_TOKEN");
         // HERE need to check contract caller
 
@@ -159,7 +150,8 @@ contract VToken is SwapVerifier, MixinNonFungibleToken, Initializable {
         address[] calldata _to,
         bytes calldata _data,
         bytes calldata _operatorData
-    ) external creatorOnly(_type) {
+    ) external whenNotPaused creatorOnly(_type) {
+        require(hasRole(MINTER_ROLE, msg.sender), "CALLER_CANNOT_MINT_OR_CREATE");
         // No need to check this is a nf type rather than an id since
         // creatorOnly() will only let a type pass through.
         require(isNonFungible(_type), "TRIED_TO_MINT_NON_FUNGIBLE_FOR_FUNGIBLE_TOKEN");
@@ -198,7 +190,7 @@ contract VToken is SwapVerifier, MixinNonFungibleToken, Initializable {
         uint256[] calldata _ids,
         uint256[] calldata _amounts,
         bytes calldata _data
-    ) external {
+    ) external whenNotPaused {
         _send(msg.sender, msg.sender, _to, _ids, _amounts, _data, "");
     }
 
@@ -216,7 +208,7 @@ contract VToken is SwapVerifier, MixinNonFungibleToken, Initializable {
         uint256[] calldata _amounts,
         bytes calldata _data,
         bytes calldata _operatorData
-    ) external {
+    ) external whenNotPaused {
         require(_isOperatorFor(msg.sender, _from), "INSUFFICIENT_ALLOWANCE");
         _send(msg.sender, _from, _to, _ids, _amounts, _data, _operatorData);
     }
@@ -242,6 +234,8 @@ contract VToken is SwapVerifier, MixinNonFungibleToken, Initializable {
         require(_to != address(0x0), "CANNOT_TRANSFER_TO_ADDRESS_ZERO");
         require(_ids.length == _amounts.length, "IDS_AND_VALUES_LENGTH_MISMATCH");
 
+        callSender(_operator, _from, _to, _ids, _amounts, _data, _operatorData);
+
         // perform transfers
         for (uint256 i = 0; i < _ids.length; ++i) {
             // Cache amount to local variable to reduce read costs.
@@ -263,6 +257,8 @@ contract VToken is SwapVerifier, MixinNonFungibleToken, Initializable {
             }
             emit Sent(_operator, _from, _to, id, amount, _data, _operatorData);
         }
+
+        callReceiver(_operator, _from, _to, _ids, _amounts, _data, _operatorData);
     }
 
     /// SWAP
@@ -283,7 +279,7 @@ contract VToken is SwapVerifier, MixinNonFungibleToken, Initializable {
         bytes32 _r,
         bytes32 _s,
         bytes memory _data
-    ) public {
+    ) public whenNotPaused {
         address signer = SwapVerify(_swap, _nonce, _expiry, _v, _r, _s);
         _send(msg.sender, msg.sender, signer, _swap.senderTokenIds, _swap.senderTokenAmounts, _data, "");
         _send(signer, signer, msg.sender, _swap.signerTokenIds, _swap.signerTokenAmounts, _data, "");
@@ -299,7 +295,7 @@ contract VToken is SwapVerifier, MixinNonFungibleToken, Initializable {
         uint256[] calldata _ids,
         uint256[] calldata _amounts,
         bytes calldata _data
-    ) external {
+    ) external whenNotPaused {
         _burn(msg.sender, msg.sender, _ids, _amounts, _data, "");
     }
 
@@ -315,7 +311,7 @@ contract VToken is SwapVerifier, MixinNonFungibleToken, Initializable {
         uint256[] calldata _amounts,
         bytes calldata _data,
         bytes calldata _operatorData
-    ) external {
+    ) external whenNotPaused {
         require(_isOperatorFor(msg.sender, _from), "INSUFFICIENT_ALLOWANCE");
         _burn(msg.sender, _from, _ids, _amounts, _data, _operatorData);
     }
@@ -336,6 +332,9 @@ contract VToken is SwapVerifier, MixinNonFungibleToken, Initializable {
         bytes memory _operatorData
     ) internal {
         require(_from != address(0), "CANNOT_BURN_FROM_ADDRESS_ZERO");
+        require(hasRole(BURNER_ROLE, _operator), "CALLER_CANNOT_BURN");
+
+        callSender(_operator, _from, address(0), _ids, _amounts, _data, _operatorData);
 
         // perform transfers
         for (uint256 i = 0; i < _ids.length; ++i) {
@@ -357,12 +356,46 @@ contract VToken is SwapVerifier, MixinNonFungibleToken, Initializable {
         }
     }
 
+    /// ERC1820
+
+    function callSender(
+        address _operator,
+        address _from,
+        address _to,
+        uint256[] memory _ids,
+        uint256[] memory _amounts,
+        bytes memory _data,
+        bytes memory _operatorData
+    ) private {
+        address impl = erc1820.getInterfaceImplementer(_from, TOKENS_SENDER_INTERFACE_HASH);
+        if (impl != address(0)) {
+            ITokenSender(impl).tokensToSend(_operator, _from, _to, _ids, _amounts, _data, _operatorData);
+        }
+    }
+
+    function callReceiver(
+        address _operator,
+        address _from,
+        address _to,
+        uint256[] memory _ids,
+        uint256[] memory _amounts,
+        bytes memory _data,
+        bytes memory _operatorData
+    ) private {
+        address impl = erc1820.getInterfaceImplementer(_to, TOKENS_RECIPIENT_INTERFACE_HASH);
+        if (impl != address(0)) {
+            ITokenRecipient(impl).tokensReceived(_operator, _from, _to, _ids, _amounts, _data, _operatorData);
+        } else {
+            require(!_to.isContract(), "RECIPIENT_NOT_IMPLEMENTING_INTERFACE");
+        }
+    }
+
     /// OPERATOR
 
     /// @notice Set a third party operator address as an operator of msg.sender to send
     /// and burn tokens on its behalf.
     /// @param _operator  Address to add to the set of authorized operators
-    function authorizeOperator(address _operator) external {
+    function authorizeOperator(address _operator) external whenNotPaused {
         require(msg.sender != _operator, "SENDER_ALREADY_HIS_OPERATOR");
 
         if (isDefaultOperators[_operator]) {
@@ -376,7 +409,7 @@ contract VToken is SwapVerifier, MixinNonFungibleToken, Initializable {
     /// @notice Remove the right of the operator address to be an operator for msg.sender
     /// and to send and burn tokens on its behalf.
     /// @param _operator  Address to add to the set of authorized operators
-    function revokeOperator(address _operator) external {
+    function revokeOperator(address _operator) external whenNotPaused {
         require(msg.sender != _operator, "SENDER_ALREADY_HIS_OPERATOR");
         if (isDefaultOperators[_operator]) {
             revokedDefaultOperators[msg.sender][_operator] = true;

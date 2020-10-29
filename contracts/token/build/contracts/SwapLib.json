@@ -4,22 +4,22 @@
   "metadata": "{\"compiler\":{\"version\":\"0.6.2+commit.bacdbe57\"},\"language\":\"Solidity\",\"output\":{\"abi\":[],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/C/Users/Vahatra/Source/github-monorepo/contracts/token/contracts/libs/SwapLib.sol\":\"SwapLib\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/C/Users/Vahatra/Source/github-monorepo/contracts/token/contracts/libs/SwapLib.sol\":{\"keccak256\":\"0x5e42c739f9d00d411537ad8dd5c111c168e3a23b435d8bb216077a00fb61a8d6\",\"urls\":[\"bzz-raw://95b6a309a026baeed72b99212e0c0d0c6de2879fe358301a7a467809e68c862d\",\"dweb:/ipfs/QmUDLjoWTMgH7Hu3NCJmneJ87REhZN4GCWDtvEbZBwkAqo\"]}},\"version\":1}",
   "bytecode": "0x60566023600b82828239805160001a607314601657fe5b30600052607381538281f3fe73000000000000000000000000000000000000000030146080604052600080fdfea26469706673582212204a0bdf76c6e516793372283a0f14b19e1d7e6aee6e26b55907e87a1ad02a023364736f6c63430006020033",
   "deployedBytecode": "0x73000000000000000000000000000000000000000030146080604052600080fdfea26469706673582212204a0bdf76c6e516793372283a0f14b19e1d7e6aee6e26b55907e87a1ad02a023364736f6c63430006020033",
-  "sourceMap": "62:250:4:-:0;;132:2:-1;166:7;155:9;146:7;137:37;255:7;249:14;246:1;241:23;235:4;232:33;222:2;;269:9;222:2;293:9;290:1;283:20;323:4;314:7;306:22;347:7;338;331:24",
-  "deployedSourceMap": "62:250:4:-:0;;;;;;;;",
+  "sourceMap": "62:250:10:-:0;;132:2:-1;166:7;155:9;146:7;137:37;255:7;249:14;246:1;241:23;235:4;232:33;222:2;;269:9;222:2;293:9;290:1;283:20;323:4;314:7;306:22;347:7;338;331:24",
+  "deployedSourceMap": "62:250:10:-:0;;;;;;;;",
   "source": "pragma solidity ^0.6.0;\r\npragma experimental ABIEncoderV2;\r\n\r\nlibrary SwapLib {\r\n    using SwapLib for Swap;\r\n\r\n    struct Swap {\r\n        address sender;\r\n        uint256[] senderTokenIds;\r\n        uint256[] senderTokenAmounts;\r\n        uint256[] signerTokenIds;\r\n        uint256[] signerTokenAmounts;\r\n    }\r\n}\r\n",
   "sourcePath": "C:\\Users\\Vahatra\\Source\\github-monorepo\\contracts\\token\\contracts\\libs\\SwapLib.sol",
   "ast": {
     "absolutePath": "/C/Users/Vahatra/Source/github-monorepo/contracts/token/contracts/libs/SwapLib.sol",
     "exportedSymbols": {
       "SwapLib": [
-        1497
+        1933
       ]
     },
-    "id": 1498,
+    "id": 1934,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 1477,
+        "id": 1913,
         "literals": [
           "solidity",
           "^",
@@ -27,16 +27,16 @@
           ".0"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:23:4"
+        "src": "0:23:10"
       },
       {
-        "id": 1478,
+        "id": 1914,
         "literals": [
           "experimental",
           "ABIEncoderV2"
         ],
         "nodeType": "PragmaDirective",
-        "src": "25:33:4"
+        "src": "25:33:10"
       },
       {
         "abstract": false,
@@ -45,54 +45,54 @@
         "contractKind": "library",
         "documentation": null,
         "fullyImplemented": true,
-        "id": 1497,
+        "id": 1933,
         "linearizedBaseContracts": [
-          1497
+          1933
         ],
         "name": "SwapLib",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
-            "id": 1481,
+            "id": 1917,
             "libraryName": {
               "contractScope": null,
-              "id": 1479,
+              "id": 1915,
               "name": "SwapLib",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 1497,
-              "src": "91:7:4",
+              "referencedDeclaration": 1933,
+              "src": "91:7:10",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_SwapLib_$1497",
+                "typeIdentifier": "t_contract$_SwapLib_$1933",
                 "typeString": "library SwapLib"
               }
             },
             "nodeType": "UsingForDirective",
-            "src": "85:23:4",
+            "src": "85:23:10",
             "typeName": {
               "contractScope": null,
-              "id": 1480,
+              "id": 1916,
               "name": "Swap",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 1496,
-              "src": "103:4:4",
+              "referencedDeclaration": 1932,
+              "src": "103:4:10",
               "typeDescriptions": {
-                "typeIdentifier": "t_struct$_Swap_$1496_storage_ptr",
+                "typeIdentifier": "t_struct$_Swap_$1932_storage_ptr",
                 "typeString": "struct SwapLib.Swap"
               }
             }
           },
           {
             "canonicalName": "SwapLib.Swap",
-            "id": 1496,
+            "id": 1932,
             "members": [
               {
                 "constant": false,
-                "id": 1483,
+                "id": 1919,
                 "name": "sender",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 1496,
-                "src": "139:14:4",
+                "scope": 1932,
+                "src": "139:14:10",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -100,10 +100,10 @@
                   "typeString": "address"
                 },
                 "typeName": {
-                  "id": 1482,
+                  "id": 1918,
                   "name": "address",
                   "nodeType": "ElementaryTypeName",
-                  "src": "139:7:4",
+                  "src": "139:7:10",
                   "stateMutability": "nonpayable",
                   "typeDescriptions": {
                     "typeIdentifier": "t_address",
@@ -115,12 +115,12 @@
               },
               {
                 "constant": false,
-                "id": 1486,
+                "id": 1922,
                 "name": "senderTokenIds",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 1496,
-                "src": "164:24:4",
+                "scope": 1932,
+                "src": "164:24:10",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -129,19 +129,19 @@
                 },
                 "typeName": {
                   "baseType": {
-                    "id": 1484,
+                    "id": 1920,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "164:7:4",
+                    "src": "164:7:10",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
-                  "id": 1485,
+                  "id": 1921,
                   "length": null,
                   "nodeType": "ArrayTypeName",
-                  "src": "164:9:4",
+                  "src": "164:9:10",
                   "typeDescriptions": {
                     "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
                     "typeString": "uint256[]"
@@ -152,12 +152,12 @@
               },
               {
                 "constant": false,
-                "id": 1489,
+                "id": 1925,
                 "name": "senderTokenAmounts",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 1496,
-                "src": "199:28:4",
+                "scope": 1932,
+                "src": "199:28:10",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -166,19 +166,19 @@
                 },
                 "typeName": {
                   "baseType": {
-                    "id": 1487,
+                    "id": 1923,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "199:7:4",
+                    "src": "199:7:10",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
-                  "id": 1488,
+                  "id": 1924,
                   "length": null,
                   "nodeType": "ArrayTypeName",
-                  "src": "199:9:4",
+                  "src": "199:9:10",
                   "typeDescriptions": {
                     "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
                     "typeString": "uint256[]"
@@ -189,12 +189,12 @@
               },
               {
                 "constant": false,
-                "id": 1492,
+                "id": 1928,
                 "name": "signerTokenIds",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 1496,
-                "src": "238:24:4",
+                "scope": 1932,
+                "src": "238:24:10",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -203,19 +203,19 @@
                 },
                 "typeName": {
                   "baseType": {
-                    "id": 1490,
+                    "id": 1926,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "238:7:4",
+                    "src": "238:7:10",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
-                  "id": 1491,
+                  "id": 1927,
                   "length": null,
                   "nodeType": "ArrayTypeName",
-                  "src": "238:9:4",
+                  "src": "238:9:10",
                   "typeDescriptions": {
                     "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
                     "typeString": "uint256[]"
@@ -226,12 +226,12 @@
               },
               {
                 "constant": false,
-                "id": 1495,
+                "id": 1931,
                 "name": "signerTokenAmounts",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 1496,
-                "src": "273:28:4",
+                "scope": 1932,
+                "src": "273:28:10",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -240,19 +240,19 @@
                 },
                 "typeName": {
                   "baseType": {
-                    "id": 1493,
+                    "id": 1929,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "273:7:4",
+                    "src": "273:7:10",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
-                  "id": 1494,
+                  "id": 1930,
                   "length": null,
                   "nodeType": "ArrayTypeName",
-                  "src": "273:9:4",
+                  "src": "273:9:10",
                   "typeDescriptions": {
                     "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
                     "typeString": "uint256[]"
@@ -264,29 +264,29 @@
             ],
             "name": "Swap",
             "nodeType": "StructDefinition",
-            "scope": 1497,
-            "src": "116:193:4",
+            "scope": 1933,
+            "src": "116:193:10",
             "visibility": "public"
           }
         ],
-        "scope": 1498,
-        "src": "62:250:4"
+        "scope": 1934,
+        "src": "62:250:10"
       }
     ],
-    "src": "0:314:4"
+    "src": "0:314:10"
   },
   "legacyAST": {
     "absolutePath": "/C/Users/Vahatra/Source/github-monorepo/contracts/token/contracts/libs/SwapLib.sol",
     "exportedSymbols": {
       "SwapLib": [
-        1497
+        1933
       ]
     },
-    "id": 1498,
+    "id": 1934,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 1477,
+        "id": 1913,
         "literals": [
           "solidity",
           "^",
@@ -294,16 +294,16 @@
           ".0"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:23:4"
+        "src": "0:23:10"
       },
       {
-        "id": 1478,
+        "id": 1914,
         "literals": [
           "experimental",
           "ABIEncoderV2"
         ],
         "nodeType": "PragmaDirective",
-        "src": "25:33:4"
+        "src": "25:33:10"
       },
       {
         "abstract": false,
@@ -312,54 +312,54 @@
         "contractKind": "library",
         "documentation": null,
         "fullyImplemented": true,
-        "id": 1497,
+        "id": 1933,
         "linearizedBaseContracts": [
-          1497
+          1933
         ],
         "name": "SwapLib",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
-            "id": 1481,
+            "id": 1917,
             "libraryName": {
               "contractScope": null,
-              "id": 1479,
+              "id": 1915,
               "name": "SwapLib",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 1497,
-              "src": "91:7:4",
+              "referencedDeclaration": 1933,
+              "src": "91:7:10",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_SwapLib_$1497",
+                "typeIdentifier": "t_contract$_SwapLib_$1933",
                 "typeString": "library SwapLib"
               }
             },
             "nodeType": "UsingForDirective",
-            "src": "85:23:4",
+            "src": "85:23:10",
             "typeName": {
               "contractScope": null,
-              "id": 1480,
+              "id": 1916,
               "name": "Swap",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 1496,
-              "src": "103:4:4",
+              "referencedDeclaration": 1932,
+              "src": "103:4:10",
               "typeDescriptions": {
-                "typeIdentifier": "t_struct$_Swap_$1496_storage_ptr",
+                "typeIdentifier": "t_struct$_Swap_$1932_storage_ptr",
                 "typeString": "struct SwapLib.Swap"
               }
             }
           },
           {
             "canonicalName": "SwapLib.Swap",
-            "id": 1496,
+            "id": 1932,
             "members": [
               {
                 "constant": false,
-                "id": 1483,
+                "id": 1919,
                 "name": "sender",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 1496,
-                "src": "139:14:4",
+                "scope": 1932,
+                "src": "139:14:10",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -367,10 +367,10 @@
                   "typeString": "address"
                 },
                 "typeName": {
-                  "id": 1482,
+                  "id": 1918,
                   "name": "address",
                   "nodeType": "ElementaryTypeName",
-                  "src": "139:7:4",
+                  "src": "139:7:10",
                   "stateMutability": "nonpayable",
                   "typeDescriptions": {
                     "typeIdentifier": "t_address",
@@ -382,12 +382,12 @@
               },
               {
                 "constant": false,
-                "id": 1486,
+                "id": 1922,
                 "name": "senderTokenIds",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 1496,
-                "src": "164:24:4",
+                "scope": 1932,
+                "src": "164:24:10",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -396,19 +396,19 @@
                 },
                 "typeName": {
                   "baseType": {
-                    "id": 1484,
+                    "id": 1920,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "164:7:4",
+                    "src": "164:7:10",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
-                  "id": 1485,
+                  "id": 1921,
                   "length": null,
                   "nodeType": "ArrayTypeName",
-                  "src": "164:9:4",
+                  "src": "164:9:10",
                   "typeDescriptions": {
                     "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
                     "typeString": "uint256[]"
@@ -419,12 +419,12 @@
               },
               {
                 "constant": false,
-                "id": 1489,
+                "id": 1925,
                 "name": "senderTokenAmounts",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 1496,
-                "src": "199:28:4",
+                "scope": 1932,
+                "src": "199:28:10",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -433,19 +433,19 @@
                 },
                 "typeName": {
                   "baseType": {
-                    "id": 1487,
+                    "id": 1923,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "199:7:4",
+                    "src": "199:7:10",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
-                  "id": 1488,
+                  "id": 1924,
                   "length": null,
                   "nodeType": "ArrayTypeName",
-                  "src": "199:9:4",
+                  "src": "199:9:10",
                   "typeDescriptions": {
                     "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
                     "typeString": "uint256[]"
@@ -456,12 +456,12 @@
               },
               {
                 "constant": false,
-                "id": 1492,
+                "id": 1928,
                 "name": "signerTokenIds",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 1496,
-                "src": "238:24:4",
+                "scope": 1932,
+                "src": "238:24:10",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -470,19 +470,19 @@
                 },
                 "typeName": {
                   "baseType": {
-                    "id": 1490,
+                    "id": 1926,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "238:7:4",
+                    "src": "238:7:10",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
-                  "id": 1491,
+                  "id": 1927,
                   "length": null,
                   "nodeType": "ArrayTypeName",
-                  "src": "238:9:4",
+                  "src": "238:9:10",
                   "typeDescriptions": {
                     "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
                     "typeString": "uint256[]"
@@ -493,12 +493,12 @@
               },
               {
                 "constant": false,
-                "id": 1495,
+                "id": 1931,
                 "name": "signerTokenAmounts",
                 "nodeType": "VariableDeclaration",
                 "overrides": null,
-                "scope": 1496,
-                "src": "273:28:4",
+                "scope": 1932,
+                "src": "273:28:10",
                 "stateVariable": false,
                 "storageLocation": "default",
                 "typeDescriptions": {
@@ -507,19 +507,19 @@
                 },
                 "typeName": {
                   "baseType": {
-                    "id": 1493,
+                    "id": 1929,
                     "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "273:7:4",
+                    "src": "273:7:10",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
-                  "id": 1494,
+                  "id": 1930,
                   "length": null,
                   "nodeType": "ArrayTypeName",
-                  "src": "273:9:4",
+                  "src": "273:9:10",
                   "typeDescriptions": {
                     "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
                     "typeString": "uint256[]"
@@ -531,16 +531,16 @@
             ],
             "name": "Swap",
             "nodeType": "StructDefinition",
-            "scope": 1497,
-            "src": "116:193:4",
+            "scope": 1933,
+            "src": "116:193:10",
             "visibility": "public"
           }
         ],
-        "scope": 1498,
-        "src": "62:250:4"
+        "scope": 1934,
+        "src": "62:250:10"
       }
     ],
-    "src": "0:314:4"
+    "src": "0:314:10"
   },
   "compiler": {
     "name": "solc",
@@ -548,7 +548,7 @@
   },
   "networks": {},
   "schemaVersion": "3.3.1",
-  "updatedAt": "2020-10-29T17:03:31.786Z",
+  "updatedAt": "2020-10-29T19:46:13.562Z",
   "devdoc": {
     "methods": {}
   },
