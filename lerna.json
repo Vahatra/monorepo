@@ -2,5 +2,5 @@
   "version": "independent",
   "npmClient": "yarn",
   "useWorkspaces": true,
-  "packages": ["contracts/*", "subgraphs/*", "packages/*"]
+  "packages": ["contracts/*", "subgraphs/*", "zk-snark/*"]
 }

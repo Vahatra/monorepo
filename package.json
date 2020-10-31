@@ -4,7 +4,7 @@
   "workspaces": [
     "contracts/*",
     "subgraphs/*",
-    "packages/*"
+    "zk-snark/*"
   ],
   "devDependencies": {
     "lerna": "^3.22.1"
