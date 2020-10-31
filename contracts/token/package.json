@@ -1,5 +1,5 @@
 {
-  "name": "@vahatra/token",
+  "name": "@vahatra/contracts-token",
   "version": "1.0.0",
   "description": "",
   "main": "truffle-config.js",
@@ -13,6 +13,7 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
+    "@0x/abi-gen": "^5.4.8",
     "@openzeppelin/contracts": "^3.2.0"
   },
   "devDependencies": {

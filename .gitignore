@@ -94,3 +94,5 @@ subgraphs/tracerchain/generated/
 .DS_Store
 
 */**/adr.json
+
+*.ptau
