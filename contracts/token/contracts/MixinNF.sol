@@ -3,17 +3,17 @@ pragma solidity ^0.6.0;
 pragma experimental ABIEncoderV2;
 
 contract MixinNF {
-    /// Use a split bit implementation.
+    /// @dev Use a split bit implementation.
     /// Store the type in the upper 128 bits..
     uint256 internal constant TYPE_MASK = uint256(uint128(~0)) << 128;
 
-    /// ..and the non-fungible index in the lower 128
+    /// @dev ..and the non-fungible index in the lower 128
     uint256 internal constant NF_INDEX_MASK = uint128(~0);
 
-    /// The top bit is a flag to tell if this is a NFI.
+    /// @dev The top bit is a flag to tell if this is a NFI.
     uint256 internal constant TYPE_NF_BIT = 1 << 255;
 
-    /// mapping of nft to owner
+    /// @dev mapping of nft to owner
     mapping(uint256 => address) internal nfOwners;
 
     /// @dev Returns true if token is non-fungible

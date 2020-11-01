@@ -90,3 +90,5 @@ subgraphs/*/build/
 */**/adr.json
 
 *.ptau
+
+.secret

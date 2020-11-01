@@ -6,35 +6,36 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/proxy/Initializable.sol";
+// import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
 import "./interfaces/ITokenRecipient.sol";
 import "./interfaces/ITokenSender.sol";
 import "./MixinNF.sol";
 import "./SwapVerifier.sol";
 
-contract Token is SwapVerifier, MixinNF, Initializable, Pausable, AccessControl {
+// contract Token is SwapVerifier, MixinNF, Initializable, Pausable, AccessControl {
+contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
     using Address for address;
     using SafeMath for uint256;
 
     IERC1820Registry private erc1820;
 
-    /// Token nonce
+    /// @dev Token nonce
     uint256 internal nonce;
 
-    /// mapping from token to creator.
+    /// @dev mapping from token to creator.
     mapping(uint256 => address) public creators;
 
-    /// mapping from token to max index for non fungible tokens.
+    /// @dev mapping from token to max index for non fungible tokens.
     mapping(uint256 => uint256) public maxIndex;
 
-    /// granularity for fungible tokens.
+    /// @dev granularity for fungible tokens.
     uint256 internal granularity;
 
-    /// mapping for balance of tokens and owner.
+    /// @dev mapping for balance of tokens and owner.
     mapping(uint256 => mapping(address => uint256)) internal balances;
 
-    /// mapping of operators
+    /// @dev mapping of operators
     mapping(address => mapping(address => bool)) internal operators;
 
     bytes32 private TOKEN_SENDER_INTERFACE_HASH;
@@ -102,7 +103,7 @@ contract Token is SwapVerifier, MixinNF, Initializable, Pausable, AccessControl 
 
     /// INIT
 
-    function initialize(uint256 _granularity) external initializer {
+    constructor(uint256 _granularity) public {
         granularity = _granularity;
 
         TOKEN_SENDER_INTERFACE_HASH = keccak256("ITokenSender");
@@ -110,6 +111,15 @@ contract Token is SwapVerifier, MixinNF, Initializable, Pausable, AccessControl 
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
+
+    // function initialize(uint256 _granularity) external initializer {
+    //     granularity = _granularity;
+
+    //     TOKEN_SENDER_INTERFACE_HASH = keccak256("ITokenSender");
+    //     TOKEN_RECIPIENT_INTERFACE_HASH = keccak256("ITokenRecipient");
+
+    //     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    // }
 
     /// EXTERNAL
 

@@ -1,11 +1,11 @@
-const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
+// const { deployProxy, upgradeProxy } = require('@openzeppelin/truffle-upgrades');
 const EIP712 = require('../utils/EIP712.js');
 const Token = artifacts.require("Token");
 
 contract("Token contract test", async accounts => {
 
     const create = async (_creator, _uri, _isNF, _data) => {
-        await instance.createTokenType(_uri, _isNF, _data, {
+        await instance.create(_uri, _isNF, _data, {
             from: _creator,
         });
     };
@@ -57,17 +57,14 @@ contract("Token contract test", async accounts => {
     let nonFungible;
 
     before(async () => {
-        instance = await deployProxy(Token, [1]);
-        EIP712_DOMAIN_HASH = await instance.EIP712_DOMAIN_HASH();
-    });
-
-
-    it("NOT IMPLEMENTED", async () => {
-        throw 'not implemented';
+        // instance = await deployProxy(Token, [1]);
+        instance = await Token.deployed();
+        EIP712_DOMAIN_TYPEHASH = await instance.EIP712_DOMAIN_TYPEHASH();
     });
 
     it("should create a fungible token", async () => {
-        fungible = await create(accounts[0], "api.uri.token", false, "");
+        throw 'not implemented';
+        fungible = await create(accounts[0], "api.uri.token", false, Buffer.from("a"));
         assert.isNotNull(fungible, 'No returned type');
         console.log("Token type created ", fungible);
     });

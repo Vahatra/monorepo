@@ -50,7 +50,7 @@ contract SwapVerifier {
             );
     }
 
-    function SwapVerify(
+    function swapVerify(
         SwapLib.Swap memory _swap,
         uint256 _nonce,
         uint256 _expiry,
