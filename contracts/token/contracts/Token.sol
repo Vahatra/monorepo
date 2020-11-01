@@ -8,8 +8,8 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
-import "./Interfaces/ITokenRecipient.sol";
-import "./Interfaces/ITokenSender.sol";
+import "./interfaces/ITokenRecipient.sol";
+import "./interfaces/ITokenSender.sol";
 import "./MixinNF.sol";
 import "./SwapVerifier.sol";
 
@@ -114,12 +114,12 @@ contract Token is SwapVerifier, MixinNF, Initializable, Pausable, AccessControl 
     /// EXTERNAL
 
     /// @dev Creates a new token
-    /// @param uri      URI of the token
+    /// @param _uri      URI of the token
     /// @param _isNF    is non-fungible token
     /// @param _data    Additional data with no specified format
     /// @return type_ Token type (a unique identifier)
     function create(
-        string calldata uri,
+        string calldata _uri,
         bool _isNF,
         bytes calldata _data
     ) external whenNotPaused returns (uint256 type_) {
@@ -134,20 +134,20 @@ contract Token is SwapVerifier, MixinNF, Initializable, Pausable, AccessControl 
 
         emit Created(msg.sender, type_, _data);
 
-        if (bytes(uri).length > 0) {
-            emit URI(uri, type_);
+        if (bytes(_uri).length > 0) {
+            emit URI(_uri, type_);
         }
     }
 
     /// @dev Mints fungible tokens
-    /// @param _id      Token type
     /// @param _to      Beneficiaries of minted tokens
+    /// @param _id      Token type
     /// @param _amounts Amounts of minted tokens
     /// @param _data    Additional data with no specified format
     /// @param _operatorData Additional data with no specified format
     function mintFungible(
-        uint256 _id,
         address[] calldata _to,
+        uint256 _id,
         uint256[] calldata _amounts,
         bytes calldata _data,
         bytes calldata _operatorData
@@ -166,13 +166,13 @@ contract Token is SwapVerifier, MixinNF, Initializable, Pausable, AccessControl 
     }
 
     /// @dev Mints a non-fungible token
-    /// @param _type    Token type
     /// @param _to      Beneficiaries of minted tokens
+    /// @param _type    Token type (base type)
     /// @param _data    Additional data with no specified format
     /// @param _operatorData Additional data with no specified format
     function mintNonFungible(
-        uint256 _type,
         address[] calldata _to,
+        uint256 _type,
         bytes calldata _data,
         bytes calldata _operatorData
     ) external whenNotPaused creatorOnly(_type) {
