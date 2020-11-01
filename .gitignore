@@ -79,10 +79,10 @@ TODO.md
 .vscode
 
 # generated truffle contract artifacts/
-contracts/**/build/
+contracts/*/build/
 
 # generated graph code
-subgraphs/**/build/
+subgraphs/*/build/
 
 
 .DS_Store
