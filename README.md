@@ -12,14 +12,14 @@ Just a bunch of ideas put together, may change to something completly different.
 
 **Main contracts:**
 
-- [`Account.sol`](/contracts/Account.sol)
+- [`Account.sol`](/contracts/token/contracts/Account.sol)
   - Contract that holds the implementation logic for all account management functionality (addAccount, updateAccountStatus, authorizeOperator, revokeOperator,...).
   - Add an account or sub-account.
   - Set an account status to Active, Suspended or Blacklisted.
   - Authorize, revoke an operator.
   - Can only be called by the `Implementation` contract expect for some `public view` functions.
   - ### `RINKEBY` [0x24AA4FFC6CE2826bC0D1abB4Eb391CfE4be57593](https://rinkeby.etherscan.io/address/0x24aa4ffc6ce2826bc0d1abb4eb391cfe4be57593#readContract)
-- [`Token.sol`](/contracts/Token.sol)
+- [`Token.sol`](/contracts/token/contracts/Token.sol)
   - Contract that holds the implementation logic for all token management functionality (create, mintFungible, mintNonFungible, send, operatorSend, swap,...).
   - Split-Bit ID/Type similar to `0x's ERC1155 implementation`.
   - Mint Fungible or Non-Fungible tokens with a granularity constraint for Fungible tokens.
@@ -28,7 +28,7 @@ Just a bunch of ideas put together, may change to something completly different.
   - Swap tokens in one transaction using offline signing and on-chain verification (`ERC712`).
   - Can only be called by the `Implementation` contract expect for some `public view` functions.
   - ### `RINKEBY` [0x00004908AC9F162640a4875ca4723A8A82c3B500](https://rinkeby.etherscan.io/address/0x00004908ac9f162640a4875ca4723a8a82c3b500#readContract)
-- [`Implementation.sol`](/contracts/Implementation.sol)
+- [`Implementation.sol`](/contracts/token/contracts/Implementation.sol)
   - Wrapper arround the `Token` and `Account` contract.
   - ### `RINKEBY` [0x3D3075F680E05F788c38B77f4e8C9737cBB05bE2](https://rinkeby.etherscan.io/address/0x3d3075f680e05f788c38b77f4e8c9737cbb05be2#writeContract)
 
