@@ -7,25 +7,28 @@ import "./SwapVerifier.sol";
 import "./Account.sol";
 import "./Token.sol";
 
-/// @title Token contract
-/// @notice This contract holds implementation logic for all token management
-// contract Token is SwapVerifier, MixinNF, Initializable, Pausable, AccessControl {
+/// @title Implementation contract.
+/// @notice This contract holds the implementation logic of the project.
+/// @dev Function docs are inside the Account and Token contracts.
 contract implementation is Ownable, SwapVerifier {
     Account private account;
     Token private token;
 
-    /// @notice constructor accepts the contracts addresses of other deployed contracts.
-    /// @param _account - address of org manager contract
-    /// @param _token - address of token manager contract
+    /// @notice Constructor accepts the contracts addresses of other deployed contracts.
+    /// @param _account Address of org manager contract
+    /// @param _token   Address of token manager contract
     constructor(address _account, address _token) public {
         account = Account(_account);
-        token = Token(_token);
         account.initialize(address(this));
+        account.addAccount(msg.sender, address(0), "OWNER");
+
+        token = Token(_token);
         token.initialize(address(this));
     }
 
     /// ACCOUNT
 
+    /// @dev If _pAcc != 0, check that msg.sender == _pAcc.
     function addAccount(
         address _acc,
         address _pAcc,
@@ -37,6 +40,11 @@ contract implementation is Ownable, SwapVerifier {
         account.addAccount(_acc, _pAcc, _name);
     }
 
+    /// @dev the following actions are allowed:
+    ///     1 - Suspend - called by parent account
+    ///     2 - Reactivate - called by parent account
+    ///     3 - Blacklist - called by owner
+    ///     4 - Recover - called by owner
     function updateAccountStatus(address _acc, uint256 _action) external {
         if (_action == 1 || _action == 2) {
             require(msg.sender == _parentAccount(_acc), "INVALID_CALLER");

@@ -11,8 +11,9 @@ import "./interfaces/ITokenSender.sol";
 import "./Initializable.sol";
 import "./MixinNF.sol";
 
-/// @title Token contract
-/// @notice This contract holds implementation logic for all token management
+/// @title Token contract.
+/// @notice This contract holds the implementation logic for all token management
+/// functionality. This can be called only by the implementation contract.
 contract Token is MixinNF, Initializable {
     using Address for address;
     using SafeMath for uint256;
@@ -20,43 +21,34 @@ contract Token is MixinNF, Initializable {
 
     IERC1820Registry private erc1820;
 
-    /// @dev Token nonce
+    /// @dev Token nonce.
     uint256 internal nonce;
 
-    /// @dev mapping from token to creator.
+    /// @dev Mapping from token to creator.
     mapping(uint256 => address) public creators;
 
-    /// @dev mapping from token to max index for non fungible tokens.
+    /// @dev Mapping from token to max index for non fungible tokens.
     mapping(uint256 => uint256) public maxIndex;
 
-    /// @dev granularity for fungible tokens.
+    /// @dev Granularity for fungible tokens.
     uint256 internal gran;
 
-    /// @dev mapping for balance of tokens and owner.
+    /// @dev Mapping for balance of tokens and owner.
     mapping(uint256 => mapping(address => uint256)) internal balances;
 
-    bytes32 private TOKEN_SENDER_INTERFACE_HASH;
-    bytes32 private TOKEN_RECIPIENT_INTERFACE_HASH;
-
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
-
-    /// asserts token is owned by msg.sender
-    modifier creatorOnly(uint256 _id) {
-        require(creators[_id] == msg.sender, "NOT_CREATOR");
-        _;
-    }
+    bytes32 private TOKEN_SENDER_INTERFACE_HASH = keccak256("ITokenSender");
+    bytes32 private TOKEN_RECIPIENT_INTERFACE_HASH = keccak256("ITokenRecipient");
 
     /// EVENT
 
-    /// @dev create MUST emit when a token is created.
+    /// @dev `create` MUST emit when a token is created.
     /// Creator will always be msg.sender.
     event TokenCreated(address indexed creator, uint256 indexed id, bytes data);
 
     /// @dev emits IF uri is not empty on token creation.
     event TokenURI(string value, uint256 indexed id);
 
-    /// @dev send/sendOperator MUST emit when tokens are transferred.
+    /// @dev `send/sendOperator` MUST emit when tokens are transferred.
     /// Operator will always be msg.sender.
     event TokenSent(
         address operator,
@@ -68,7 +60,7 @@ contract Token is MixinNF, Initializable {
         bytes operatorData
     );
 
-    /// @dev mintFungible/mintNonFungible MUST emit when tokens are minted.
+    /// @dev `mintFungible/mintNonFungible` MUST emit when tokens are minted.
     /// Operator will always be msg.sender.
     event TokenMinted(
         address operator,
@@ -78,7 +70,7 @@ contract Token is MixinNF, Initializable {
         bytes data
     );
 
-    /// @dev burn/burnOperator MUST emit when tokens are burned.
+    /// @dev `burn/burnOperator` MUST emit when tokens are burned.
     /// Operator will always be msg.sender.
     event TokenBurned(
         address operator,
@@ -89,18 +81,21 @@ contract Token is MixinNF, Initializable {
         bytes operatorData
     );
 
-    /// CONST
-
-    constructor(uint256 _granularity) public {
+    /// @notice Constructor sets the granularity for fungible tokens.
+    /// @param _granularity     Granularity of fungible tokens.
+    /// @param _1820Registry    ERC1820 Registry contract address.
+    constructor(uint256 _granularity, address _1820Registry) public {
         gran = _granularity;
+        erc1820 = IERC1820Registry(_1820Registry);
     }
 
-    /// @notice Creates a new token
-    /// @param _sender  Address of the sender (msg.sender)
-    /// @param _uri     URI of the token
-    /// @param _isNF    is non-fungible token
-    /// @param _data    Additional data with no specified format
-    /// @return type_ Token type (a unique identifier)
+    /// @notice Creates a new token.
+    /// @param _sender  Address of the sender (msg.sender).
+    /// @param _uri     URI of the token.
+    /// @param _isNF    is non-fungible token.
+    /// @param _data    Additional data with no specified format.
+    /// @return type_ Token type (a unique identifier).
+    /// @dev Only the owner should call this.
     function create(
         address _sender,
         string calldata _uri,
@@ -122,42 +117,47 @@ contract Token is MixinNF, Initializable {
         }
     }
 
-    /// @notice Mints fungible tokens
-    /// @param _sender  Address of the sender (msg.sender)
-    /// @param _to      Beneficiaries of minted tokens
-    /// @param _id      Token type
-    /// @param _amounts Amounts of minted tokens
-    /// @param _data    Additional data with no specified format
+    /// @notice Mints fungible tokens.
+    /// @param _sender  Address of the sender (msg.sender).
+    /// @param _to      Beneficiaries of minted tokens.
+    /// @param _id      Token type.
+    /// @param _amounts Amounts of minted tokens.
+    /// @param _data    Additional data with no specified format.
+    /// @dev Only the owner should call this.
     function mintFungible(
         address _sender,
         address[] calldata _to,
         uint256 _id,
         uint256[] calldata _amounts,
         bytes calldata _data
-    ) external onlyImplementation creatorOnly(_id) {
+    ) external onlyImplementation {
+        require(_isCreator(_sender, _id), "NOT_CREATOR");
         require(isFungible(_id), "NON_FUNGIBLE_TOKEN");
 
         for (uint256 i = 0; i < _to.length; ++i) {
             address to = _to[i];
             require(to != address(0), "INVALID_ADDRESS");
             uint256 amount = _amounts[i];
+            require(_checkGranularity(amount), "INVALID_GRANULARITY");
             balances[_id][to] = amount.add(balances[_id][to]);
 
             emit TokenMinted(_sender, to, _id, amount, _data);
         }
     }
 
-    /// @notice Mints a non-fungible token
-    /// @param _sender  Address of the sender (msg.sender)
-    /// @param _to      Beneficiaries of minted tokens
-    /// @param _type    Token type (base type)
-    /// @param _data    Additional data with no specified format
+    /// @notice Mints a non-fungible token.
+    /// @param _sender  Address of the sender (msg.sender).
+    /// @param _to      Beneficiaries of minted tokens.
+    /// @param _type    Token type.
+    /// @param _data    Additional data with no specified format.
+    /// @dev Only the owner should call this.
     function mintNonFungible(
         address _sender,
         address[] calldata _to,
         uint256 _type,
         bytes calldata _data
-    ) external onlyImplementation creatorOnly(_type) {
+    ) external onlyImplementation {
+        require(_isCreator(_sender, _type), "NOT_CREATOR");
         require(isNonFungible(_type), "FUNGIBLE_TOKEN");
 
         // Index are 1-based.
@@ -168,13 +168,13 @@ contract Token is MixinNF, Initializable {
             require(to != address(0), "INVALID_ADDRESS");
             uint256 id = _type | (index + i);
             nfOwners[id] = to;
-            // NFT base type balance
+            // NFT type balance.
             balances[_type][to] = 1;
 
             emit TokenMinted(_sender, to, id, 1, _data);
         }
 
-        // record the `maxIndex` of this nft type (base type).
+        // record the `maxIndex` of this nft type.
         maxIndex[_type] = _to.length.add(maxIndex[_type]);
     }
 
@@ -220,12 +220,10 @@ contract Token is MixinNF, Initializable {
         _burn(_operator, _from, _ids, _amounts, _data, _operatorData);
     }
 
-    /// EXTERNAL VIEW
-
     /// @notice Get the balance of an account's Tokens.
-    /// @param _owner  The address of the token holder
-    /// @param _id     ID of the Token
-    /// @return The _owner's balance of the Token type requested
+    /// @param _owner  The address of the token holder.
+    /// @param _id     ID of the Token.
+    /// @return The _owner's balance of the Token type requested.
     function balanceOf(address _owner, uint256 _id) external view returns (uint256) {
         if (isNonFungibleItem(_id)) {
             return nfOwners[_id] == _owner ? 1 : 0;
@@ -234,9 +232,9 @@ contract Token is MixinNF, Initializable {
     }
 
     /// @notice Get the balance of multiple account/token pairs.
-    /// @param _owners The addresses of the token holders
-    /// @param _ids    ID of the Tokens
-    /// @return balances_   The _owner's balance of the Token types requested
+    /// @param _owners The addresses of the token holders.
+    /// @param _ids    ID of the Tokens.
+    /// @return balances_   The _owner's balance of the Token types requested.
     function balanceOfBatch(address[] calldata _owners, uint256[] calldata _ids)
         external
         view
@@ -261,13 +259,11 @@ contract Token is MixinNF, Initializable {
         return gran;
     }
 
-    /// PUBLIC
-
     /// @notice Swaps tokens.
-    /// @param _sender  Address of the sender (msg.sender)
-    /// @param _signer  Address of the signer
-    /// @param _swap    Swap data
-    /// @param _data    Additional data with no specified format
+    /// @param _sender  Address of the sender (msg.sender).
+    /// @param _signer  Address of the signer.
+    /// @param _swap    Swap data.
+    /// @param _data    Additional data with no specified format.
     function swap(
         address _sender,
         address _signer,
@@ -294,16 +290,14 @@ contract Token is MixinNF, Initializable {
         );
     }
 
-    /// INTERNAL
-
     /// @notice Sends multiple types of tokens.
-    /// @param _operator    msg.sender
-    /// @param _from        Sender addresses
-    /// @param _to          Recipient addresses
-    /// @param _ids         Ids of each token type
-    /// @param _amounts     Transfer amounts per token type
-    /// @param _data        Additional data with no specified format
-    /// @param _operatorData Additional data with no specified format
+    /// @param _operator    msg.sender.
+    /// @param _from        Sender addresses.
+    /// @param _to          Recipient addresses.
+    /// @param _ids         Ids of each token type.
+    /// @param _amounts     Transfer amounts per token type.
+    /// @param _data        Additional data with no specified format.
+    /// @param _operatorData Additional data with no specified format.
     function _send(
         address _operator,
         address _from,
@@ -328,10 +322,10 @@ contract Token is MixinNF, Initializable {
                 nfOwners[id] = _to;
                 // Keep the balance of NF type in base type id
                 uint256 baseType = getNonFungibleBaseType(id);
-                balances[baseType][_from] = balances[baseType][_from].sub(amount);
-                balances[baseType][_to] = balances[baseType][_to].add(amount);
+                balances[baseType][_from] = balances[baseType][_from].sub(1);
+                balances[baseType][_to] = balances[baseType][_to].add(1);
             } else {
-                _checkGranularity(amount);
+                require(_checkGranularity(amount), "INVALID_GRANULARITY");
                 balances[id][_from] = balances[id][_from].sub(amount);
                 balances[id][_to] = balances[id][_to].add(amount);
             }
@@ -342,12 +336,12 @@ contract Token is MixinNF, Initializable {
     }
 
     /// @notice Burns token.
-    /// @param _operator    msg.sender
-    /// @param _from        Source address
-    /// @param _ids         IDs of the token type
-    /// @param _amounts     Burn amounts
-    /// @param _data        Additional data with no specified format
-    /// @param _operatorData Additional data with no specified format
+    /// @param _operator    msg.sender.
+    /// @param _from        Source address.
+    /// @param _ids         IDs of the token type.
+    /// @param _amounts     Burn amounts per type.
+    /// @param _data        Additional data with no specified format.
+    /// @param _operatorData Additional data with no specified format.
     function _burn(
         address _operator,
         address _from,
@@ -368,9 +362,9 @@ contract Token is MixinNF, Initializable {
                 require(nfOwners[id] == _from, "NOT_OWNER");
                 nfOwners[id] == address(0);
                 uint256 baseType = getNonFungibleBaseType(id);
-                balances[baseType][_from] = balances[baseType][_from].sub(amount);
+                balances[baseType][_from] = balances[baseType][_from].sub(1);
             } else {
-                _checkGranularity(amount);
+                require(_checkGranularity(amount), "INVALID_GRANULARITY");
                 balances[id][_from] = balances[id][_from].sub(amount);
             }
             emit TokenBurned(_operator, _from, id, amount, _data, _operatorData);
@@ -378,13 +372,14 @@ contract Token is MixinNF, Initializable {
     }
 
     /// @notice Calls/Verifies the sender.
-    /// @param _operator    msg.sender
-    /// @param _from        Sender address
-    /// @param _to          Recepient address
-    /// @param _ids         IDs of the token type
-    /// @param _amounts     Burn amounts
-    /// @param _data        Additional data with no specified format
-    /// @param _operatorData Additional data with no specified format
+    /// @param _operator    msg.sender.
+    /// @param _from        Sender address.
+    /// @param _to          Recepient address.
+    /// @param _ids         IDs of the token type.
+    /// @param _amounts     Burn amounts.
+    /// @param _data        Additional data with no specified format.
+    /// @param _operatorData Additional data with no specified format.
+    /// @dev EIP1820
     function callSender(
         address _operator,
         address _from,
@@ -416,6 +411,7 @@ contract Token is MixinNF, Initializable {
     /// @param _amounts     Burn amounts
     /// @param _data        Additional data with no specified format
     /// @param _operatorData Additional data with no specified format
+    /// @dev EIP1820
     function callReceiver(
         address _operator,
         address _from,
@@ -441,9 +437,13 @@ contract Token is MixinNF, Initializable {
         }
     }
 
-    /// INTERNAL VIEWS
+    /// @notice Checks if _creator is the creator of token of type _id.
+    function _isCreator(address _creator, uint256 _id) internal view returns (bool) {
+        return (creators[_id] == _creator);
+    }
 
-    function _checkGranularity(uint256 _amount) internal view {
-        require(_amount % gran == 0, "INVALID_GRANULARITY");
+    /// @notice Checks if an amount is a mulitple of the granularity for fungible tokens.
+    function _checkGranularity(uint256 _amount) internal view returns (bool) {
+        return (_amount % gran == 0);
     }
 }

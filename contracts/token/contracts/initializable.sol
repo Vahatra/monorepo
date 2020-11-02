@@ -3,12 +3,11 @@ pragma solidity ^0.6.0;
 pragma experimental ABIEncoderV2;
 
 /// @title Initializable contract
-/// @notice This contract is for setting implementation
 contract Initializable {
     bool internal booted = false;
     address internal implementation;
 
-    /// @notice confirms that the caller is the address of implementation contract
+    /// @notice Confirms that the caller is the address of implementation contract
     modifier onlyImplementation {
         require(msg.sender == implementation, "NOT_IMPLEMENTATION_CONTRACT");
         _;

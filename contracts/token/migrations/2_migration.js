@@ -8,7 +8,7 @@ const Implementation = artifacts.require(
 
 module.exports = function (deployer) {
   deployer
-    .deploy(Token, 1)
+    .deploy(Token, 1, "0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24") // Rinkeby
     .then(function () {
       return deployer.deploy(Account, 5, 1);
     })
