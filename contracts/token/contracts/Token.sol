@@ -5,16 +5,17 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
-// import "@openzeppelin/contracts/proxy/Initializable.sol";
 import "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
 import "./interfaces/ITokenRecipient.sol";
 import "./interfaces/ITokenSender.sol";
+import "./Initializable.sol";
 import "./MixinNF.sol";
 import "./SwapVerifier.sol";
 
+/// @title Token contract
+/// @notice This contract holds implementation logic for all token management
 // contract Token is SwapVerifier, MixinNF, Initializable, Pausable, AccessControl {
-contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
+contract Token is SwapVerifier, MixinNF, Initializable, AccessControl {
     using Address for address;
     using SafeMath for uint256;
 
@@ -30,7 +31,7 @@ contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
     mapping(uint256 => uint256) public maxIndex;
 
     /// @dev granularity for fungible tokens.
-    uint256 internal granularity;
+    uint256 internal gran;
 
     /// @dev mapping for balance of tokens and owner.
     mapping(uint256 => mapping(address => uint256)) internal balances;
@@ -101,16 +102,18 @@ contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
     /// Holder will always be msg.sender.
     event RevokedOperator(address indexed operator, address indexed holder);
 
-    /// INIT
+    /// CONST
 
     constructor(uint256 _granularity) public {
-        granularity = _granularity;
+        gran = _granularity;
 
         TOKEN_SENDER_INTERFACE_HASH = keccak256("ITokenSender");
         TOKEN_RECIPIENT_INTERFACE_HASH = keccak256("ITokenRecipient");
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
+
+    /// INIT
 
     // function initialize(uint256 _granularity) external initializer {
     //     granularity = _granularity;
@@ -124,7 +127,7 @@ contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
     /// EXTERNAL
 
     /// @dev Creates a new token
-    /// @param _uri      URI of the token
+    /// @param _uri     URI of the token
     /// @param _isNF    is non-fungible token
     /// @param _data    Additional data with no specified format
     /// @return type_ Token type (a unique identifier)
@@ -132,7 +135,7 @@ contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
         string calldata _uri,
         bool _isNF,
         bytes calldata _data
-    ) external whenNotPaused returns (uint256 type_) {
+    ) external onlyImplementation returns (uint256 type_) {
         require(hasRole(MINTER_ROLE, msg.sender), "INVALID_ROLE");
         // Store the type in the upper 128 bits
         type_ = (++nonce << 128);
@@ -161,7 +164,7 @@ contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
         uint256[] calldata _amounts,
         bytes calldata _data,
         bytes calldata _operatorData
-    ) external whenNotPaused creatorOnly(_id) {
+    ) external onlyImplementation creatorOnly(_id) {
         require(hasRole(MINTER_ROLE, msg.sender), "INVALID_ROLE");
         require(isFungible(_id), "NON_FUNGIBLE_TOKEN");
 
@@ -185,7 +188,7 @@ contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
         uint256 _type,
         bytes calldata _data,
         bytes calldata _operatorData
-    ) external whenNotPaused creatorOnly(_type) {
+    ) external onlyImplementation creatorOnly(_type) {
         require(hasRole(MINTER_ROLE, msg.sender), "INVALID_ROLE");
         require(isNonFungible(_type), "FUNGIBLE_TOKEN");
 
@@ -212,7 +215,7 @@ contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
         uint256[] calldata _ids,
         uint256[] calldata _amounts,
         bytes calldata _data
-    ) external whenNotPaused {
+    ) external onlyImplementation {
         _send(msg.sender, msg.sender, _to, _ids, _amounts, _data, "");
     }
 
@@ -223,7 +226,7 @@ contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
         uint256[] calldata _amounts,
         bytes calldata _data,
         bytes calldata _operatorData
-    ) external whenNotPaused {
+    ) external onlyImplementation {
         require(_isOperatorFor(msg.sender, _from), "INSUFFICIENT_ALLOWANCE");
         _send(msg.sender, _from, _to, _ids, _amounts, _data, _operatorData);
     }
@@ -232,7 +235,7 @@ contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
         uint256[] calldata _ids,
         uint256[] calldata _amounts,
         bytes calldata _data
-    ) external whenNotPaused {
+    ) external onlyImplementation {
         _burn(msg.sender, msg.sender, _ids, _amounts, _data, "");
     }
 
@@ -242,7 +245,7 @@ contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
         uint256[] calldata _amounts,
         bytes calldata _data,
         bytes calldata _operatorData
-    ) external whenNotPaused {
+    ) external onlyImplementation {
         require(_isOperatorFor(msg.sender, _from), "INSUFFICIENT_ALLOWANCE");
         _burn(msg.sender, _from, _ids, _amounts, _data, _operatorData);
     }
@@ -250,7 +253,7 @@ contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
     /// @notice Set a third party operator address as an operator of msg.sender to send
     /// and burn tokens on its behalf.
     /// @param _operator  Address to add to the set of authorized operators
-    function authorizeOperator(address _operator) external whenNotPaused {
+    function authorizeOperator(address _operator) external onlyImplementation {
         require(msg.sender != _operator, "INVALID_OPERATOR");
 
         operators[msg.sender][_operator] = true;
@@ -260,7 +263,7 @@ contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
     /// @notice Remove the right of the operator address to be an operator for msg.sender
     /// and to send and burn tokens on its behalf.
     /// @param _operator  Address to add to the set of authorized operators
-    function revokeOperator(address _operator) external whenNotPaused {
+    function revokeOperator(address _operator) external onlyImplementation {
         require(msg.sender != _operator, "INVALID_OPERATOR");
 
         operators[msg.sender][_operator] = false;
@@ -312,8 +315,8 @@ contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
     }
 
     /// @notice Get the granularity of fungible tokens.
-    function granularityNF() external view returns (uint256) {
-        return granularity;
+    function granularity() external view returns (uint256) {
+        return gran;
     }
 
     /// PUBLIC
@@ -334,7 +337,7 @@ contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
         bytes32 _r,
         bytes32 _s,
         bytes memory _data
-    ) public whenNotPaused {
+    ) public onlyImplementation {
         address signer = SwapVerify(_swap, _nonce, _expiry, _v, _r, _s);
         _send(
             msg.sender,
@@ -511,6 +514,6 @@ contract Token is SwapVerifier, MixinNF, Pausable, AccessControl {
     }
 
     function _checkGranularity(uint256 _amount) internal view {
-        require(_amount % granularity == 0, "INVALID_GRANULARITY");
+        require(_amount % gran == 0, "INVALID_GRANULARITY");
     }
 }
