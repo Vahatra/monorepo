@@ -1,8 +1,8 @@
 // File: ..\..\node_modules\@openzeppelin\contracts\GSN\Context.sol
 
-// SPDX-License-Identifier: MIT
-
+// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.6.0;
+pragma experimental ABIEncoderV2;
 
 /*
  * @dev Provides information about the current execution context, including the
@@ -15,21 +15,17 @@ pragma solidity ^0.6.0;
  * This contract is only required for intermediate, library-like contracts.
  */
 abstract contract Context {
-    function _msgSender() internal view virtual returns (address payable) {
+    function _msgSender() internal virtual view returns (address payable) {
         return msg.sender;
     }
 
-    function _msgData() internal view virtual returns (bytes memory) {
+    function _msgData() internal virtual view returns (bytes memory) {
         this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
         return msg.data;
     }
 }
 
 // File: @openzeppelin\contracts\access\Ownable.sol
-
-// SPDX-License-Identifier: MIT
-
-pragma solidity ^0.6.0;
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where
@@ -51,7 +47,7 @@ contract Ownable is Context {
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
      */
-    constructor () internal {
+    constructor() internal {
         address msgSender = _msgSender();
         _owner = msgSender;
         emit OwnershipTransferred(address(0), msgSender);
@@ -97,10 +93,6 @@ contract Ownable is Context {
 
 // File: contracts\libs\SwapLib.sol
 
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.6.0;
-pragma experimental ABIEncoderV2;
-
 library SwapLib {
     using SwapLib for Swap;
 
@@ -114,11 +106,6 @@ library SwapLib {
 }
 
 // File: contracts\SwapVerifier.sol
-
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.6.0;
-pragma experimental ABIEncoderV2;
-
 
 /// @title Contract for verifying the signature of a token swap transaction.
 contract SwapVerifier {
@@ -191,10 +178,6 @@ contract SwapVerifier {
 
 // File: contracts\Initializable.sol
 
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.6.0;
-pragma experimental ABIEncoderV2;
-
 /// @title Initializable contract
 contract Initializable {
     bool internal booted = false;
@@ -215,11 +198,6 @@ contract Initializable {
 }
 
 // File: contracts\Account.sol
-
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.6.0;
-pragma experimental ABIEncoderV2;
-
 
 /// @title Account manager contract
 /// @notice This contract holds the implementation logic for all account management
@@ -425,10 +403,6 @@ contract Account is Initializable {
 
 // File: @openzeppelin\contracts\math\SafeMath.sol
 
-// SPDX-License-Identifier: MIT
-
-pragma solidity ^0.6.0;
-
 /**
  * @dev Wrappers over Solidity's arithmetic operations with added overflow
  * checks.
@@ -484,7 +458,11 @@ library SafeMath {
      *
      * - Subtraction cannot overflow.
      */
-    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function sub(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         require(b <= a, errorMessage);
         uint256 c = a - b;
 
@@ -543,7 +521,11 @@ library SafeMath {
      *
      * - The divisor cannot be zero.
      */
-    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function div(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         require(b > 0, errorMessage);
         uint256 c = a / b;
         // assert(a == b * c + a % b); // There is no case in which this doesn't hold
@@ -579,17 +561,17 @@ library SafeMath {
      *
      * - The divisor cannot be zero.
      */
-    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+    function mod(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
         require(b != 0, errorMessage);
         return a % b;
     }
 }
 
 // File: @openzeppelin\contracts\utils\Address.sol
-
-// SPDX-License-Identifier: MIT
-
-pragma solidity ^0.6.2;
 
 /**
  * @dev Collection of functions related to the address type
@@ -619,7 +601,9 @@ library Address {
 
         uint256 size;
         // solhint-disable-next-line no-inline-assembly
-        assembly { size := extcodesize(account) }
+        assembly {
+            size := extcodesize(account)
+        }
         return size > 0;
     }
 
@@ -643,7 +627,7 @@ library Address {
         require(address(this).balance >= amount, "Address: insufficient balance");
 
         // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
-        (bool success, ) = recipient.call{ value: amount }("");
+        (bool success, ) = recipient.call{value: amount}("");
         require(success, "Address: unable to send value, recipient may have reverted");
     }
 
@@ -666,7 +650,7 @@ library Address {
      * _Available since v3.1._
      */
     function functionCall(address target, bytes memory data) internal returns (bytes memory) {
-      return functionCall(target, data, "Address: low-level call failed");
+        return functionCall(target, data, "Address: low-level call failed");
     }
 
     /**
@@ -675,7 +659,11 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {
+    function functionCall(
+        address target,
+        bytes memory data,
+        string memory errorMessage
+    ) internal returns (bytes memory) {
         return _functionCallWithValue(target, data, 0, errorMessage);
     }
 
@@ -690,8 +678,18 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCallWithValue(address target, bytes memory data, uint256 value) internal returns (bytes memory) {
-        return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
+    function functionCallWithValue(
+        address target,
+        bytes memory data,
+        uint256 value
+    ) internal returns (bytes memory) {
+        return
+            functionCallWithValue(
+                target,
+                data,
+                value,
+                "Address: low-level call with value failed"
+            );
     }
 
     /**
@@ -700,16 +698,26 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCallWithValue(address target, bytes memory data, uint256 value, string memory errorMessage) internal returns (bytes memory) {
+    function functionCallWithValue(
+        address target,
+        bytes memory data,
+        uint256 value,
+        string memory errorMessage
+    ) internal returns (bytes memory) {
         require(address(this).balance >= value, "Address: insufficient balance for call");
         return _functionCallWithValue(target, data, value, errorMessage);
     }
 
-    function _functionCallWithValue(address target, bytes memory data, uint256 weiValue, string memory errorMessage) private returns (bytes memory) {
+    function _functionCallWithValue(
+        address target,
+        bytes memory data,
+        uint256 weiValue,
+        string memory errorMessage
+    ) private returns (bytes memory) {
         require(isContract(target), "Address: call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = target.call{ value: weiValue }(data);
+        (bool success, bytes memory returndata) = target.call{value: weiValue}(data);
         if (success) {
             return returndata;
         } else {
@@ -730,10 +738,6 @@ library Address {
 }
 
 // File: @openzeppelin\contracts\introspection\IERC1820Registry.sol
-
-// SPDX-License-Identifier: MIT
-
-pragma solidity ^0.6.0;
 
 /**
  * @dev Interface of the global ERC1820 Registry, as defined in the
@@ -792,7 +796,11 @@ interface IERC1820Registry {
      * queried for support, unless `implementer` is the caller. See
      * {IERC1820Implementer-canImplementInterfaceForAddress}.
      */
-    function setInterfaceImplementer(address account, bytes32 interfaceHash, address implementer) external;
+    function setInterfaceImplementer(
+        address account,
+        bytes32 interfaceHash,
+        address implementer
+    ) external;
 
     /**
      * @dev Returns the implementer of `interfaceHash` for `account`. If no such
@@ -803,7 +811,10 @@ interface IERC1820Registry {
      *
      * `account` being the zero address is an alias for the caller's address.
      */
-    function getInterfaceImplementer(address account, bytes32 interfaceHash) external view returns (address);
+    function getInterfaceImplementer(address account, bytes32 interfaceHash)
+        external
+        view
+        returns (address);
 
     /**
      * @dev Returns the interface hash for an `interfaceName`, as defined in the
@@ -828,7 +839,10 @@ interface IERC1820Registry {
      *  @param interfaceId ERC165 interface to check.
      *  @return True if `account` implements `interfaceId`, false otherwise.
      */
-    function implementsERC165Interface(address account, bytes4 interfaceId) external view returns (bool);
+    function implementsERC165Interface(address account, bytes4 interfaceId)
+        external
+        view
+        returns (bool);
 
     /**
      *  @notice Checks whether a contract implements an ERC165 interface or not without using nor updating the cache.
@@ -836,17 +850,21 @@ interface IERC1820Registry {
      *  @param interfaceId ERC165 interface to check.
      *  @return True if `account` implements `interfaceId`, false otherwise.
      */
-    function implementsERC165InterfaceNoCache(address account, bytes4 interfaceId) external view returns (bool);
+    function implementsERC165InterfaceNoCache(address account, bytes4 interfaceId)
+        external
+        view
+        returns (bool);
 
-    event InterfaceImplementerSet(address indexed account, bytes32 indexed interfaceHash, address indexed implementer);
+    event InterfaceImplementerSet(
+        address indexed account,
+        bytes32 indexed interfaceHash,
+        address indexed implementer
+    );
 
     event ManagerChanged(address indexed account, address indexed newManager);
 }
 
 // File: contracts\interfaces\ITokenRecipient.sol
-
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
 
 /// @dev a.
 interface ITokenRecipient {
@@ -864,9 +882,6 @@ interface ITokenRecipient {
 
 // File: contracts\interfaces\ITokenSender.sol
 
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
-
 /// @dev a.
 interface ITokenSender {
     /// @dev a
@@ -882,10 +897,6 @@ interface ITokenSender {
 }
 
 // File: contracts\MixinNF.sol
-
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.6.0;
-pragma experimental ABIEncoderV2;
 
 contract MixinNF {
     /// @dev Use a split bit implementation.
@@ -940,18 +951,6 @@ contract MixinNF {
 }
 
 // File: contracts\Token.sol
-
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.6.0;
-pragma experimental ABIEncoderV2;
-
-
-
-
-
-
-
-
 
 /// @title Token contract.
 /// @notice This contract holds the implementation logic for all token management
@@ -1391,14 +1390,6 @@ contract Token is MixinNF, Initializable {
 }
 
 // File: contracts\Implementation.sol
-
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.6.0;
-pragma experimental ABIEncoderV2;
-
-
-
-
 
 /// @title Implementation contract.
 /// @notice This contract holds the implementation logic of the project.
