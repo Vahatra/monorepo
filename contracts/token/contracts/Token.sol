@@ -2,22 +2,21 @@
 pragma solidity ^0.6.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
+import "./libs/SwapLib.sol";
 import "./interfaces/ITokenRecipient.sol";
 import "./interfaces/ITokenSender.sol";
 import "./Initializable.sol";
 import "./MixinNF.sol";
-import "./SwapVerifier.sol";
 
 /// @title Token contract
 /// @notice This contract holds implementation logic for all token management
-// contract Token is SwapVerifier, MixinNF, Initializable, Pausable, AccessControl {
-contract Token is SwapVerifier, MixinNF, Initializable, AccessControl {
+contract Token is MixinNF, Initializable {
     using Address for address;
     using SafeMath for uint256;
+    using SwapLib for SwapLib.Swap;
 
     IERC1820Registry private erc1820;
 
@@ -36,9 +35,6 @@ contract Token is SwapVerifier, MixinNF, Initializable, AccessControl {
     /// @dev mapping for balance of tokens and owner.
     mapping(uint256 => mapping(address => uint256)) internal balances;
 
-    /// @dev mapping of operators
-    mapping(address => mapping(address => bool)) internal operators;
-
     bytes32 private TOKEN_SENDER_INTERFACE_HASH;
     bytes32 private TOKEN_RECIPIENT_INTERFACE_HASH;
 
@@ -55,14 +51,14 @@ contract Token is SwapVerifier, MixinNF, Initializable, AccessControl {
 
     /// @dev create MUST emit when a token is created.
     /// Creator will always be msg.sender.
-    event Created(address indexed creator, uint256 indexed id, bytes data);
+    event TokenCreated(address indexed creator, uint256 indexed id, bytes data);
 
     /// @dev emits IF uri is not empty on token creation.
-    event URI(string value, uint256 indexed id);
+    event TokenURI(string value, uint256 indexed id);
 
     /// @dev send/sendOperator MUST emit when tokens are transferred.
     /// Operator will always be msg.sender.
-    event Sent(
+    event TokenSent(
         address operator,
         address indexed from,
         address indexed to,
@@ -74,18 +70,17 @@ contract Token is SwapVerifier, MixinNF, Initializable, AccessControl {
 
     /// @dev mintFungible/mintNonFungible MUST emit when tokens are minted.
     /// Operator will always be msg.sender.
-    event Minted(
+    event TokenMinted(
         address operator,
         address indexed to,
         uint256 indexed id,
         uint256 amount,
-        bytes data,
-        bytes operatorData
+        bytes data
     );
 
     /// @dev burn/burnOperator MUST emit when tokens are burned.
     /// Operator will always be msg.sender.
-    event Burned(
+    event TokenBurned(
         address operator,
         address indexed from,
         uint256 indexed id,
@@ -94,78 +89,52 @@ contract Token is SwapVerifier, MixinNF, Initializable, AccessControl {
         bytes operatorData
     );
 
-    /// @dev authorizeOperator MUST emit when an operator is authorized.
-    /// Holder will always be msg.sender.
-    event AuthorizedOperator(address indexed operator, address indexed holder);
-
-    /// @dev revokeOperator MUST emit when an operator is revoked.
-    /// Holder will always be msg.sender.
-    event RevokedOperator(address indexed operator, address indexed holder);
-
     /// CONST
 
     constructor(uint256 _granularity) public {
         gran = _granularity;
-
-        TOKEN_SENDER_INTERFACE_HASH = keccak256("ITokenSender");
-        TOKEN_RECIPIENT_INTERFACE_HASH = keccak256("ITokenRecipient");
-
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    /// INIT
-
-    // function initialize(uint256 _granularity) external initializer {
-    //     granularity = _granularity;
-
-    //     TOKEN_SENDER_INTERFACE_HASH = keccak256("ITokenSender");
-    //     TOKEN_RECIPIENT_INTERFACE_HASH = keccak256("ITokenRecipient");
-
-    //     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    // }
-
-    /// EXTERNAL
-
-    /// @dev Creates a new token
+    /// @notice Creates a new token
+    /// @param _sender  Address of the sender (msg.sender)
     /// @param _uri     URI of the token
     /// @param _isNF    is non-fungible token
     /// @param _data    Additional data with no specified format
     /// @return type_ Token type (a unique identifier)
     function create(
+        address _sender,
         string calldata _uri,
         bool _isNF,
         bytes calldata _data
     ) external onlyImplementation returns (uint256 type_) {
-        require(hasRole(MINTER_ROLE, msg.sender), "INVALID_ROLE");
         // Store the type in the upper 128 bits
         type_ = (++nonce << 128);
 
         if (_isNF) {
             type_ = type_ | TYPE_NF_BIT;
         }
-        creators[type_] = msg.sender;
+        creators[type_] = _sender;
 
-        emit Created(msg.sender, type_, _data);
+        emit TokenCreated(_sender, type_, _data);
 
         if (bytes(_uri).length > 0) {
-            emit URI(_uri, type_);
+            emit TokenURI(_uri, type_);
         }
     }
 
-    /// @dev Mints fungible tokens
+    /// @notice Mints fungible tokens
+    /// @param _sender  Address of the sender (msg.sender)
     /// @param _to      Beneficiaries of minted tokens
     /// @param _id      Token type
     /// @param _amounts Amounts of minted tokens
     /// @param _data    Additional data with no specified format
-    /// @param _operatorData Additional data with no specified format
     function mintFungible(
+        address _sender,
         address[] calldata _to,
         uint256 _id,
         uint256[] calldata _amounts,
-        bytes calldata _data,
-        bytes calldata _operatorData
+        bytes calldata _data
     ) external onlyImplementation creatorOnly(_id) {
-        require(hasRole(MINTER_ROLE, msg.sender), "INVALID_ROLE");
         require(isFungible(_id), "NON_FUNGIBLE_TOKEN");
 
         for (uint256 i = 0; i < _to.length; ++i) {
@@ -174,22 +143,21 @@ contract Token is SwapVerifier, MixinNF, Initializable, AccessControl {
             uint256 amount = _amounts[i];
             balances[_id][to] = amount.add(balances[_id][to]);
 
-            emit Minted(msg.sender, to, _id, amount, _data, _operatorData);
+            emit TokenMinted(_sender, to, _id, amount, _data);
         }
     }
 
-    /// @dev Mints a non-fungible token
+    /// @notice Mints a non-fungible token
+    /// @param _sender  Address of the sender (msg.sender)
     /// @param _to      Beneficiaries of minted tokens
     /// @param _type    Token type (base type)
     /// @param _data    Additional data with no specified format
-    /// @param _operatorData Additional data with no specified format
     function mintNonFungible(
+        address _sender,
         address[] calldata _to,
         uint256 _type,
-        bytes calldata _data,
-        bytes calldata _operatorData
+        bytes calldata _data
     ) external onlyImplementation creatorOnly(_type) {
-        require(hasRole(MINTER_ROLE, msg.sender), "INVALID_ROLE");
         require(isNonFungible(_type), "FUNGIBLE_TOKEN");
 
         // Index are 1-based.
@@ -203,7 +171,7 @@ contract Token is SwapVerifier, MixinNF, Initializable, AccessControl {
             // NFT base type balance
             balances[_type][to] = 1;
 
-            emit Minted(msg.sender, to, id, 1, _data, _operatorData);
+            emit TokenMinted(_sender, to, id, 1, _data);
         }
 
         // record the `maxIndex` of this nft type (base type).
@@ -211,15 +179,17 @@ contract Token is SwapVerifier, MixinNF, Initializable, AccessControl {
     }
 
     function send(
+        address _from,
         address _to,
         uint256[] calldata _ids,
         uint256[] calldata _amounts,
         bytes calldata _data
     ) external onlyImplementation {
-        _send(msg.sender, msg.sender, _to, _ids, _amounts, _data, "");
+        _send(_from, _from, _to, _ids, _amounts, _data, "");
     }
 
     function operatorSend(
+        address _operator,
         address _from,
         address _to,
         uint256[] calldata _ids,
@@ -227,47 +197,27 @@ contract Token is SwapVerifier, MixinNF, Initializable, AccessControl {
         bytes calldata _data,
         bytes calldata _operatorData
     ) external onlyImplementation {
-        require(_isOperatorFor(msg.sender, _from), "INSUFFICIENT_ALLOWANCE");
-        _send(msg.sender, _from, _to, _ids, _amounts, _data, _operatorData);
+        _send(_operator, _from, _to, _ids, _amounts, _data, _operatorData);
     }
 
     function burn(
+        address _from,
         uint256[] calldata _ids,
         uint256[] calldata _amounts,
         bytes calldata _data
     ) external onlyImplementation {
-        _burn(msg.sender, msg.sender, _ids, _amounts, _data, "");
+        _burn(_from, _from, _ids, _amounts, _data, "");
     }
 
     function operatorBurn(
+        address _operator,
         address _from,
         uint256[] calldata _ids,
         uint256[] calldata _amounts,
         bytes calldata _data,
         bytes calldata _operatorData
     ) external onlyImplementation {
-        require(_isOperatorFor(msg.sender, _from), "INSUFFICIENT_ALLOWANCE");
-        _burn(msg.sender, _from, _ids, _amounts, _data, _operatorData);
-    }
-
-    /// @notice Set a third party operator address as an operator of msg.sender to send
-    /// and burn tokens on its behalf.
-    /// @param _operator  Address to add to the set of authorized operators
-    function authorizeOperator(address _operator) external onlyImplementation {
-        require(msg.sender != _operator, "INVALID_OPERATOR");
-
-        operators[msg.sender][_operator] = true;
-        emit AuthorizedOperator(_operator, msg.sender);
-    }
-
-    /// @notice Remove the right of the operator address to be an operator for msg.sender
-    /// and to send and burn tokens on its behalf.
-    /// @param _operator  Address to add to the set of authorized operators
-    function revokeOperator(address _operator) external onlyImplementation {
-        require(msg.sender != _operator, "INVALID_OPERATOR");
-
-        operators[msg.sender][_operator] = false;
-        emit RevokedOperator(_operator, msg.sender);
+        _burn(_operator, _from, _ids, _amounts, _data, _operatorData);
     }
 
     /// EXTERNAL VIEW
@@ -306,14 +256,6 @@ contract Token is SwapVerifier, MixinNF, Initializable, AccessControl {
         return balances_;
     }
 
-    /// @notice Queries whether the operator address is an operator of the holder address.
-    /// @param _operator  Address of authorized operator
-    /// @param _holder    The owner of the Tokens
-    /// @return True if the operator is approved, false if not
-    function isOperatorFor(address _operator, address _holder) external view returns (bool) {
-        return _isOperatorFor(_operator, _holder);
-    }
-
     /// @notice Get the granularity of fungible tokens.
     function granularity() external view returns (uint256) {
         return gran;
@@ -322,36 +264,29 @@ contract Token is SwapVerifier, MixinNF, Initializable, AccessControl {
     /// PUBLIC
 
     /// @notice Swaps tokens.
+    /// @param _sender  Address of the sender (msg.sender)
+    /// @param _signer  Address of the signer
     /// @param _swap    Swap data
-    /// @param _nonce   Contract state required to match the signature
-    /// @param _expiry  Time at which to expire the signature
-    /// @param _v       Recovery byte of the signature
-    /// @param _r       Half of the ECDSA signature pair
-    /// @param _s       Half of the ECDSA signature pair
     /// @param _data    Additional data with no specified format
     function swap(
+        address _sender,
+        address _signer,
         SwapLib.Swap memory _swap,
-        uint256 _nonce,
-        uint256 _expiry,
-        uint8 _v,
-        bytes32 _r,
-        bytes32 _s,
         bytes memory _data
     ) public onlyImplementation {
-        address signer = SwapVerify(_swap, _nonce, _expiry, _v, _r, _s);
         _send(
-            msg.sender,
-            msg.sender,
-            signer,
+            _sender,
+            _sender,
+            _signer,
             _swap.senderTokenIds,
             _swap.senderTokenAmounts,
             _data,
             ""
         );
         _send(
-            signer,
-            signer,
-            msg.sender,
+            _signer,
+            _signer,
+            _sender,
             _swap.signerTokenIds,
             _swap.signerTokenAmounts,
             _data,
@@ -400,7 +335,7 @@ contract Token is SwapVerifier, MixinNF, Initializable, AccessControl {
                 balances[id][_from] = balances[id][_from].sub(amount);
                 balances[id][_to] = balances[id][_to].add(amount);
             }
-            emit Sent(_operator, _from, _to, id, amount, _data, _operatorData);
+            emit TokenSent(_operator, _from, _to, id, amount, _data, _operatorData);
         }
 
         callReceiver(_operator, _from, _to, _ids, _amounts, _data, _operatorData);
@@ -422,7 +357,6 @@ contract Token is SwapVerifier, MixinNF, Initializable, AccessControl {
         bytes memory _operatorData
     ) internal {
         require(_from != address(0), "INVALID_ADDRESS");
-        require(hasRole(BURNER_ROLE, _operator), "INVALID_ROLE");
 
         callSender(_operator, _from, address(0), _ids, _amounts, _data, _operatorData);
 
@@ -439,7 +373,7 @@ contract Token is SwapVerifier, MixinNF, Initializable, AccessControl {
                 _checkGranularity(amount);
                 balances[id][_from] = balances[id][_from].sub(amount);
             }
-            emit Burned(_operator, _from, id, amount, _data, _operatorData);
+            emit TokenBurned(_operator, _from, id, amount, _data, _operatorData);
         }
     }
 
@@ -508,10 +442,6 @@ contract Token is SwapVerifier, MixinNF, Initializable, AccessControl {
     }
 
     /// INTERNAL VIEWS
-
-    function _isOperatorFor(address _operator, address _holder) internal view returns (bool) {
-        return operators[_holder][_operator];
-    }
 
     function _checkGranularity(uint256 _amount) internal view {
         require(_amount % gran == 0, "INVALID_GRANULARITY");

@@ -5,8 +5,8 @@ pragma experimental ABIEncoderV2;
 /// @title Initializable contract
 /// @notice This contract is for setting implementation
 contract Initializable {
-    bool private booted = false;
-    address private implementation;
+    bool internal booted = false;
+    address internal implementation;
 
     /// @notice confirms that the caller is the address of implementation contract
     modifier onlyImplementation {

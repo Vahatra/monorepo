@@ -14,50 +14,111 @@ import "./Initializable.sol";
 ///     2 - Suspended
 ///     3 - Blacklisted
 contract Account is Initializable {
+    /// @dev variables which control the breadth and depth of the sub acc tree
+    uint256 private BREADTH_LIMIT;
+    uint256 private DEPTH_LIMIT;
+
+    /// @dev mapping of operators
+    mapping(address => mapping(address => bool)) internal operators;
+
     struct Acc {
-        address account;
-        address org;
+        address acc;
+        address pAcc; // parent account
+        address uAcc; // ultimate parent account
+        string name;
+        uint256 level;
+        address[] subAccs;
         uint256 status;
     }
 
-    mapping(address => Acc) private accountMap;
+    mapping(address => Acc) private accMap;
 
-    /// EVENTS
+    /// @dev a
+    event AccountCreated(
+        address _acc,
+        address _pAcc,
+        address _uAcc,
+        string _name,
+        uint256 level,
+        uint256 _status
+    );
 
-    event AccountCreated(address _account, address _org, uint256 _status);
-    event AccountStatusUpdated(address _account, uint256 _status);
+    /// @dev a
+    event AccountStatusUpdated(address _acc, uint256 _status);
 
-    /// EXTERNAL
+    /// @dev authorizeOperator MUST emit when an operator is authorized.
+    /// Holder will always be msg.sender.
+    event AuthorizedOperator(address indexed operator, address indexed holder);
 
-    /// @notice Add an account to an org.
-    /// @param _account Account address
-    /// @param _org     Org to which it belongs
-    /// @dev should only be called by an org
-    /// check if the org is active before calling this function.
-    function addAccount(address _account, address _org) external onlyImplementation {
-        require(accountMap[_account].account == address(0), "ALREADY_EXIST");
-        accountMap[_account] = Acc(_account, _org, 1);
-        emit AccountCreated(_account, _org, 1);
+    /// @dev revokeOperator MUST emit when an operator is revoked.
+    /// Holder will always be msg.sender.
+    event RevokedOperator(address indexed operator, address indexed holder);
+
+    /// @notice Constructor sets the BREADTH_LIMIT and DEPTH_LIMIT.
+    /// @param _breadth Max subacc count an acc can have
+    /// @param _depth   Max depth of an acc
+    constructor(uint256 _breadth, uint256 _depth) public {
+        BREADTH_LIMIT = _breadth;
+        DEPTH_LIMIT = _depth;
+    }
+
+    /// @notice Add a new acc to the network.
+    /// @param _acc     Account address
+    /// @param _pAcc    Parent acc
+    /// @param _name    Name of the acc
+    /// @dev If _pAcc != 0, check that msg.sender == _pAcc/uApp
+    function addAccount(
+        address _acc,
+        address _pAcc,
+        string calldata _name
+    ) external onlyImplementation {
+        require(!(_accountExist(_acc)), "ACCOUNT_ALREADY_EXIST");
+
+        if (_pAcc == address(0)) {
+            //root
+            accMap[_acc] = Acc(_acc, _pAcc, _acc, _name, 1, new address[](0), 1);
+        } else {
+            require(_accountExist(_pAcc), "INVALID_PACCOUNT");
+            require(accMap[_pAcc].subAccs.length < BREADTH_LIMIT, "BREADTH_EXCEEDED");
+            require(accMap[_pAcc].level < DEPTH_LIMIT, "DEPTH_EXCEEDED");
+
+            // example: (acc) google, (subacc) google.paris
+            string memory name = string(abi.encodePacked((accMap[_pAcc].name), ".", _name));
+
+            accMap[_pAcc].subAccs.push(_acc);
+
+            accMap[_acc] = Acc(
+                _acc,
+                _pAcc,
+                accMap[_acc].uAcc,
+                name,
+                accMap[_pAcc].level + 1,
+                new address[](0),
+                1
+            );
+        }
+        emit AccountCreated(
+            _acc,
+            _pAcc,
+            accMap[_acc].uAcc,
+            accMap[_acc].name,
+            accMap[_acc].level,
+            1
+        );
     }
 
     /// @notice updates the account status to the passed status value
-    /// @param _account - account
-    /// @param _org - org
+    /// @param _acc - account
     /// @param _action - new status of the account
     /// @dev the following actions are allowed
-    ///     1 - Suspend - called by org
-    ///     2 - Reactivate - called by org
+    ///     1 - Suspend - called by pAcc
+    ///     2 - Reactivate - called by pAcc
     ///     3 - Blacklist - called by admin
     ///     4 - Recover - called by admin
-    function updateAccountStatus(
-        address _account,
-        address _org,
-        uint256 _action
-    ) external onlyImplementation {
+    function updateAccountStatus(address _acc, uint256 _action) external onlyImplementation {
         require((_action > 0 && _action < 5), "INVALID_ACTION");
-        require((accountMap[_account].org == _org), "INVALID_ORG");
 
-        uint256 status = accountMap[_account].status;
+        uint256 status = accMap[_acc].status;
         uint256 newStatus;
         if (_action == 1) {
             // for suspending an account current status should be active
@@ -75,30 +136,72 @@ contract Account is Initializable {
             newStatus = 1;
         }
 
-        accountMap[_account].status = newStatus;
-        emit AccountStatusUpdated(_account, newStatus);
+        accMap[_acc].status = newStatus;
+        emit AccountStatusUpdated(_acc, newStatus);
     }
 
-    /// EXTERNAL VIEW
+    /// @notice Set a third party operator address as an operator of msg.sender to send
+    /// and burn tokens on its behalf.
+    /// @param _sender  Address of the sender (msg.sender)
+    /// @param _operator  Address to add to the set of authorized operators
+    function authorizeOperator(address _sender, address _operator) external onlyImplementation {
+        require(accountActive(_sender), "NOT_ACTIVE_ACCOUNT");
+        require(_sender != _operator, "INVALID_OPERATOR");
 
-    /// @notice Get an account's org
-    /// @param _account Account address
-    /// @return Org address
-    function getAccountOrg(address _account) external view returns (address) {
-        return (accountMap[_account].org);
+        operators[_sender][_operator] = true;
+        emit AuthorizedOperator(_operator, _sender);
     }
 
-    /// @notice Checks if the passed account exists.
-    /// @param _account Account id
-    /// @return tue/false
-    function accountExist(address _account) external view returns (bool) {
-        return (accountMap[_account].account != address(0));
+    /// @notice Remove the right of the operator address to be an operator for msg.sender
+    /// and to send and burn tokens on its behalf.
+    /// @param _sender  Address of the sender (msg.sender)
+    /// @param _operator  Address to add to the set of authorized operators
+    function revokeOperator(address _sender, address _operator) external onlyImplementation {
+        require(accountActive(_sender), "NOT_ACTIVE_ACCOUNT");
+        require(_sender != _operator, "INVALID_OPERATOR");
+
+        operators[_sender][_operator] = false;
+        emit RevokedOperator(_operator, _sender);
     }
 
-    /// @notice Confirms that account status is same as passed status.
-    /// @param _account Account
+    /// @notice Queries whether the operator address is an operator of the _acc address.
+    /// @param _operator    Address of authorized operator
+    /// @param _acc         Account address
     /// @return true/false
-    function accountStatus(address _account, uint256 _status) public view returns (bool) {
-        return (accountMap[_account].status == _status);
+    function isOperatorFor(address _operator, address _acc) external view returns (bool) {
+        return _isOperatorFor(_operator, _acc);
+    }
+
+    /// @notice Get the parent account of _acc
+    /// @param _acc Account address
+    /// @return Parent address
+    function getAccount(address _acc) external view returns (Acc memory) {
+        return accMap[_acc];
+    }
+
+    /// @notice Get an account info
+    /// @param _acc Account address
+    /// @return Parent address
+    function getParentAccount(address _acc) external view returns (address) {
+        return accMap[_acc].pAcc;
+    }
+
+    /// @notice Confirms that the acc status is active
+    /// @param _acc     Account address
+    /// @return true/false
+    /// @dev 1 - active. 2 - suspended.
+    function accountActive(address _acc) public view returns (bool) {
+        return (accMap[_acc].status == 1);
+    }
+
+    /// @notice Confirms if the given acc exist
+    /// @param _acc Account address
+    /// @return true/false
+    function _accountExist(address _acc) internal view returns (bool) {
+        return (accMap[_acc].acc != address(0));
+    }
+
+    function _isOperatorFor(address _operator, address _acc) internal view returns (bool) {
+        return operators[_acc][_operator];
     }
 }
