@@ -14,11 +14,11 @@ Just a bunch of ideas put together, may change to something completly different.
 
 - [`Account.sol`](/contracts/token/contracts/Account.sol)
   - Contract that holds the implementation logic for all account management functionality (addAccount, updateAccountStatus, authorizeOperator, revokeOperator,...).
-  - Add an account or sub-account.
+  - Register, add sub-accounts.
   - Set an account status to Active, Suspended or Blacklisted.
   - Authorize, revoke an operator.
   - Can only be called by the `Implementation` contract expect for some `public view` functions.
-  - ### `RINKEBY` [0x24AA4FFC6CE2826bC0D1abB4Eb391CfE4be57593](https://rinkeby.etherscan.io/address/0x24aa4ffc6ce2826bc0d1abb4eb391cfe4be57593#readContract)
+  - ### `RINKEBY` [0xAEebA704a11DBB627dFFe14084edb263dAbD9C51](https://rinkeby.etherscan.io/address/0xaeeba704a11dbb627dffe14084edb263dabd9c51#readContract)
 - [`Token.sol`](/contracts/token/contracts/Token.sol)
   - Contract that holds the implementation logic for all token management functionality (create, mintFungible, mintNonFungible, send, operatorSend, swap,...).
   - Split-Bit ID/Type similar to `0x's ERC1155 implementation`.
@@ -27,10 +27,10 @@ Just a bunch of ideas put together, may change to something completly different.
   - Use a third party operator to send/burn tokens.
   - Swap tokens in one transaction using offline signing and on-chain verification (`ERC712`).
   - Can only be called by the `Implementation` contract expect for some `public view` functions.
-  - ### `RINKEBY` [0x00004908AC9F162640a4875ca4723A8A82c3B500](https://rinkeby.etherscan.io/address/0x00004908ac9f162640a4875ca4723a8a82c3b500#readContract)
+  - ### `RINKEBY` [0x1d112108b341F7be0Ef3Df928E70dFD8e80a2493](https://rinkeby.etherscan.io/address/0x1d112108b341f7be0ef3df928e70dfd8e80a2493#readContract)
 - [`Implementation.sol`](/contracts/token/contracts/Implementation.sol)
   - Wrapper arround the `Token` and `Account` contract.
-  - ### `RINKEBY` [0x3D3075F680E05F788c38B77f4e8C9737cBB05bE2](https://rinkeby.etherscan.io/address/0x3d3075f680e05f788c38b77f4e8c9737cbb05be2#writeContract)
+  - ### `RINKEBY` [0xe82d666F1A813E7EDce46b7cD8d4f8F89bAdB803](https://rinkeby.etherscan.io/address/0xe82d666f1a813e7edce46b7cd8d4f8f89badb803#writeContract)
 
 **Ideas:**
 

@@ -78,8 +78,10 @@ TODO.md
 # VSCode file
 .vscode
 
-# generated truffle contract artifacts/
+# generated truffle/hardhat contract artifacts
 contracts/*/build/
+contracts/*/artifacts/
+contracts/*/cache/
 
 # generated graph code
 subgraphs/*/build/

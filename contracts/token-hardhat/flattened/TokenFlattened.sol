@@ -467,6 +467,8 @@ interface IERC1820Registry {
 
 // File: contracts\libs\SwapLib.sol
 
+// SPDX-License-Identifier: UNLICENSED
+
 library SwapLib {
     using SwapLib for Swap;
 
@@ -513,6 +515,8 @@ interface ITokenSender {
 
 // File: contracts\Initializable.sol
 
+// SPDX-License-Identifier: UNLICENSED
+
 /// @title Initializable contract
 contract Initializable {
     bool internal booted = false;
@@ -533,6 +537,8 @@ contract Initializable {
 }
 
 // File: contracts\MixinNF.sol
+
+// SPDX-License-Identifier: UNLICENSED
 
 contract MixinNF {
     /// @dev Use a split bit implementation.
@@ -587,6 +593,8 @@ contract MixinNF {
 }
 
 // File: contracts\Token.sol
+
+// SPDX-License-Identifier: UNLICENSED
 
 /// @title Token contract.
 /// @notice This contract holds the implementation logic for all token management
