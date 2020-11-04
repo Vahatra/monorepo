@@ -1,7 +1,7 @@
 // File: @openzeppelin\contracts\math\SafeMath.sol
 
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
+pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
 /**
@@ -740,7 +740,7 @@ contract Token is MixinNF, Initializable {
         uint256 index = maxIndex[_type] + 1;
         for (uint256 i = 0; i < _to.length; ++i) {
             address to = _to[i];
-            require(to != address(0), "INVALID_ADDRESS");
+            require(to != address(0), "INVALID_RECIPIENT_ADDRESS");
             uint256 id = _type | (index + i);
             nfOwners[id] = to;
             // NFT type balance.
@@ -822,7 +822,7 @@ contract Token is MixinNF, Initializable {
         bytes memory _data,
         bytes memory _operatorData
     ) public onlyImplementation {
-        require(_to != address(0x0), "INVALID_ADDRESS");
+        require(_to != address(0x0), "INVALID_RECIPIENT_ADDRESS");
         require(_ids.length == _amounts.length, "LENGTH_MISMATCH");
 
         callSender(_operator, _from, _to, _ids, _amounts, _data, _operatorData);
@@ -862,7 +862,7 @@ contract Token is MixinNF, Initializable {
         bytes memory _data,
         bytes memory _operatorData
     ) public onlyImplementation {
-        require(_from != address(0), "INVALID_ADDRESS");
+        require(_from != address(0), "INVALID_SENDER_ADDRESS");
 
         callSender(_operator, _from, address(0), _ids, _amounts, _data, _operatorData);
         for (uint256 i = 0; i < _ids.length; ++i) {

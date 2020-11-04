@@ -52,14 +52,14 @@ module.exports = {
     },
     ropsten: {
       provider: function () {
-        return new HDWalletProvider(mnemonic, "https://rinkeby.infura.io/v3/b07c5cbe07a040cea045331b0833963c")
+        return new HDWalletProvider(mnemonic, "https://rinkeby.infura.io/v3/")
       },
       network_id: 3
     },
     rinkeby: {
       // 0x0f8aE7D251BAeD14c60C9E381e55393B608609D1
       provider: function () {
-        return new HDWalletProvider(mnemonic, "https://rinkeby.infura.io/v3/b07c5cbe07a040cea045331b0833963c")
+        return new HDWalletProvider(mnemonic, "https://rinkeby.infura.io/v3/")
       },
       network_id: 4
     },

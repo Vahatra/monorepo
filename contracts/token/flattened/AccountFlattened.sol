@@ -1,7 +1,7 @@
 // File: contracts\Initializable.sol
 
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
+pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
 /// @title Initializable contract
@@ -140,7 +140,7 @@ contract Account is Initializable {
         uint256 newStatus;
         if (_action == 1) {
             // For suspending an account current status should be active.
-            require(status == 1, "ACCOUNT_NOT_ACTIVE");
+            require(status == 1, "NOT_LISTED_OR_INACTIVE_ACCOUNT");
             newStatus = 2;
         } else if (_action == 2) {
             // For reactivating a suspended account, current status should be suspended.
@@ -162,7 +162,7 @@ contract Account is Initializable {
     /// @param _sender      Address of the sender (msg.sender).
     /// @param _operator    Address to add to the set of authorized operators.
     function authorizeOperator(address _sender, address _operator) external onlyImplementation {
-        require(isActive(_sender), "ACCOUNT_NOT_ACTIVE");
+        require(isActive(_sender), "NOT_LISTED_OR_INACTIVE_ACCOUNT");
         require(_sender != _operator, "INVALID_OPERATOR");
 
         operators[_sender][_operator] = true;
@@ -174,7 +174,7 @@ contract Account is Initializable {
     /// @param _sender      Address of the sender (msg.sender).
     /// @param _operator    Address to add to the set of authorized operators.
     function revokeOperator(address _sender, address _operator) external onlyImplementation {
-        require(isActive(_sender), "ACCOUNT_NOT_ACTIVE");
+        require(isActive(_sender), "NOT_LISTED_OR_INACTIVE_ACCOUNT");
         require(_sender != _operator, "INVALID_OPERATOR");
 
         operators[_sender][_operator] = false;

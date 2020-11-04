@@ -1,7 +1,7 @@
 // File: ..\..\node_modules\@openzeppelin\contracts\GSN\Context.sol
 
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.0;
+pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
 /*
@@ -26,6 +26,8 @@ abstract contract Context {
 }
 
 // File: @openzeppelin\contracts\access\Ownable.sol
+
+pragma solidity ^0.6.0;
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where
@@ -115,7 +117,7 @@ contract SwapVerifier {
     mapping(address => uint256) public signerNonces;
 
     /// @dev EIP712
-    string public constant name = "Vahatra";
+    string public constant name = "VAHATRA";
     bytes32 public constant SWAP_TYPEHASH = keccak256(
         "Swap(address sender,uint256[] senderTokenIds,uint256[] senderTokenAmounts,uint256[] signerTokenIds,uint256[] signerTokenAmounts)"
     );
@@ -140,7 +142,7 @@ contract SwapVerifier {
         uint8 _v,
         bytes32 _r,
         bytes32 _s
-    ) public returns (address signer_) {
+    ) internal returns (address signer_) {
         signer_ = ecrecover(hashSwap(_swap), _v, _r, _s);
         require(signer_ != address(0), "INVALID_SIGNER");
         require(_nonce == signerNonces[signer_]++, "INVALID_NONCE");
@@ -314,7 +316,7 @@ contract Account is Initializable {
         uint256 newStatus;
         if (_action == 1) {
             // For suspending an account current status should be active.
-            require(status == 1, "ACCOUNT_NOT_ACTIVE");
+            require(status == 1, "NOT_LISTED_OR_INACTIVE_ACCOUNT");
             newStatus = 2;
         } else if (_action == 2) {
             // For reactivating a suspended account, current status should be suspended.
@@ -336,7 +338,7 @@ contract Account is Initializable {
     /// @param _sender      Address of the sender (msg.sender).
     /// @param _operator    Address to add to the set of authorized operators.
     function authorizeOperator(address _sender, address _operator) external onlyImplementation {
-        require(isActive(_sender), "ACCOUNT_NOT_ACTIVE");
+        require(isActive(_sender), "NOT_LISTED_OR_INACTIVE_ACCOUNT");
         require(_sender != _operator, "INVALID_OPERATOR");
 
         operators[_sender][_operator] = true;
@@ -348,7 +350,7 @@ contract Account is Initializable {
     /// @param _sender      Address of the sender (msg.sender).
     /// @param _operator    Address to add to the set of authorized operators.
     function revokeOperator(address _sender, address _operator) external onlyImplementation {
-        require(isActive(_sender), "ACCOUNT_NOT_ACTIVE");
+        require(isActive(_sender), "NOT_LISTED_OR_INACTIVE_ACCOUNT");
         require(_sender != _operator, "INVALID_OPERATOR");
 
         operators[_sender][_operator] = false;
@@ -1096,7 +1098,7 @@ contract Token is MixinNF, Initializable {
         uint256 index = maxIndex[_type] + 1;
         for (uint256 i = 0; i < _to.length; ++i) {
             address to = _to[i];
-            require(to != address(0), "INVALID_ADDRESS");
+            require(to != address(0), "INVALID_RECIPIENT_ADDRESS");
             uint256 id = _type | (index + i);
             nfOwners[id] = to;
             // NFT type balance.
@@ -1178,7 +1180,7 @@ contract Token is MixinNF, Initializable {
         bytes memory _data,
         bytes memory _operatorData
     ) public onlyImplementation {
-        require(_to != address(0x0), "INVALID_ADDRESS");
+        require(_to != address(0x0), "INVALID_RECIPIENT_ADDRESS");
         require(_ids.length == _amounts.length, "LENGTH_MISMATCH");
 
         callSender(_operator, _from, _to, _ids, _amounts, _data, _operatorData);
@@ -1218,7 +1220,7 @@ contract Token is MixinNF, Initializable {
         bytes memory _data,
         bytes memory _operatorData
     ) public onlyImplementation {
-        require(_from != address(0), "INVALID_ADDRESS");
+        require(_from != address(0), "INVALID_SENDER_ADDRESS");
 
         callSender(_operator, _from, address(0), _ids, _amounts, _data, _operatorData);
         for (uint256 i = 0; i < _ids.length; ++i) {
@@ -1339,7 +1341,7 @@ contract implementation is Ownable, SwapVerifier {
 
     /// @notice Verifies if _acc exist and active.
     modifier isActive(address _acc) {
-        require(_isActive(_acc), "ACCOUNT_NOT_ACTIVE");
+        require(_isActive(_acc), "NOT_LISTED_OR_INACTIVE_ACCOUNT");
         _;
     }
 
@@ -1472,7 +1474,7 @@ contract implementation is Ownable, SwapVerifier {
         bytes memory _data
     ) public isActive(msg.sender) {
         address signer = swapVerify(_swap, _nonce, _expiry, _v, _r, _s);
-        require(_isActive(signer), "ACCOUNT_NOT_ACTIVE");
+        require(_isActive(signer), "NOT_LISTED_OR_INACTIVE_ACCOUNT");
         token.swap(msg.sender, signer, _swap, _data);
     }
 }

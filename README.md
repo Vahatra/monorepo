@@ -4,9 +4,9 @@ A monorepo for blockchain related projects.
 
 ## Pinned
 
-[`@vahatra/contracts-token`](/contracts/token)
+[`@vahatra/contracts-token`](/contracts/token) -- **`WIP`**
 
-**`WIP`**
+[`@vahatra/dapp`](/dapp) -- **`WIP`**
 
 Just a bunch of ideas put together, may change to something completly different.
 
@@ -18,7 +18,7 @@ Just a bunch of ideas put together, may change to something completly different.
   - Set an account status to Active, Suspended or Blacklisted.
   - Authorize, revoke an operator.
   - Can only be called by the `Implementation` contract expect for some `public view` functions.
-  - ### `RINKEBY` [0xAEebA704a11DBB627dFFe14084edb263dAbD9C51](https://rinkeby.etherscan.io/address/0xaeeba704a11dbb627dffe14084edb263dabd9c51#readContract)
+  - ### `RINKEBY` [0xB087A133F176a6B2Ca5e7ed8C0ABE10c9508287c](https://rinkeby.etherscan.io/dapp/0xb087a133f176a6b2ca5e7ed8c0abe10c9508287c#readContract)
 - [`Token.sol`](/contracts/token/contracts/Token.sol)
   - Contract that holds the implementation logic for all token management functionality (create, mintFungible, mintNonFungible, send, operatorSend, swap,...).
   - Split-Bit ID/Type similar to `0x's ERC1155 implementation`.
@@ -27,10 +27,14 @@ Just a bunch of ideas put together, may change to something completly different.
   - Use a third party operator to send/burn tokens.
   - Swap tokens in one transaction using offline signing and on-chain verification (`ERC712`).
   - Can only be called by the `Implementation` contract expect for some `public view` functions.
-  - ### `RINKEBY` [0x1d112108b341F7be0Ef3Df928E70dFD8e80a2493](https://rinkeby.etherscan.io/address/0x1d112108b341f7be0ef3df928e70dfd8e80a2493#readContract)
+  - ### `RINKEBY` [0xC826aF0C93870bDF9B2eed05A8d4888b12E1d4e8](https://rinkeby.etherscan.io/dapp/0xc826af0c93870bdf9b2eed05a8d4888b12e1d4e8#readContract)
 - [`Implementation.sol`](/contracts/token/contracts/Implementation.sol)
   - Wrapper arround the `Token` and `Account` contract.
-  - ### `RINKEBY` [0xe82d666F1A813E7EDce46b7cD8d4f8F89bAdB803](https://rinkeby.etherscan.io/address/0xe82d666f1a813e7edce46b7cd8d4f8f89badb803#writeContract)
+  - ### `RINKEBY` [0xE1bfD8706D9f6d5d2a3249f4B4d75b57bf95D5c7](https://rinkeby.etherscan.io/dapp/0xe1bfd8706d9f6d5d2a3249f4b4d75b57bf95d5c7#writeContract)
+
+**DApp:**
+
+Built with `Django/DRF` and `React`.
 
 **Ideas:**
 
