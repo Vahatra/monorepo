@@ -1,27 +1,17 @@
 """Generated wrapper for Implementation Solidity contract."""
 
-# pylint: disable=too-many-arguments
-
 import json
-from typing import (  # noqa
-    Any,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import Any, List, Optional, Tuple, Union  # noqa
 
 from eth_utils import to_checksum_address
-from mypy_extensions import TypedDict
 from hexbytes import HexBytes
+from mypy_extensions import TypedDict  # noqa
 from web3 import Web3
 from web3.contract import ContractFunction
 from web3.datastructures import AttributeDict
 from web3.providers.base import BaseProvider
-
 from zero_ex.contract_wrappers.bases import ContractMethod, Validator
 from zero_ex.contract_wrappers.tx_params import TxParams
-
 
 # Try to import a custom validator class definition; if there isn't one,
 # declare one that we can instantiate for the default argument to the
@@ -29,7 +19,7 @@ from zero_ex.contract_wrappers.tx_params import TxParams
 try:
     # both mypy and pylint complain about what we're doing here, but this
     # works just fine, so their messages have been disabled here.
-    from . import (  # type: ignore # pylint: disable=import-self
+    from . import (  # type: ignore
         ImplementationValidator,
     )
 except ImportError:
@@ -301,6 +291,139 @@ class SignerNoncesMethod(ContractMethod):
         (index_0) = self.validate_and_normalize_inputs(index_0)
         tx_params = super().normalize_tx_params(tx_params)
         return self._underlying_method(index_0).estimateGas(tx_params.as_dict())
+
+
+class SwapVerifyMethod(ContractMethod):
+    """Various interfaces to the swapVerify method."""
+
+    def __init__(
+        self,
+        web3_or_provider: Union[Web3, BaseProvider],
+        contract_address: str,
+        contract_function: ContractFunction,
+        validator: Validator = None,
+    ):
+        """Persist instance data."""
+        super().__init__(web3_or_provider, contract_address, validator)
+        self._underlying_method = contract_function
+
+    def validate_and_normalize_inputs(
+        self,
+        swap: SwapLibSwap,
+        nonce: int,
+        expiry: int,
+        v: int,
+        r: Union[bytes, str],
+        s: Union[bytes, str],
+    ):
+        """Validate the inputs to the swapVerify method."""
+        self.validator.assert_valid(
+            method_name="swapVerify", parameter_name="_swap", argument_value=swap,
+        )
+        self.validator.assert_valid(
+            method_name="swapVerify", parameter_name="_nonce", argument_value=nonce,
+        )
+        # safeguard against fractional inputs
+        nonce = int(nonce)
+        self.validator.assert_valid(
+            method_name="swapVerify", parameter_name="_expiry", argument_value=expiry,
+        )
+        # safeguard against fractional inputs
+        expiry = int(expiry)
+        self.validator.assert_valid(
+            method_name="swapVerify", parameter_name="_v", argument_value=v,
+        )
+        self.validator.assert_valid(
+            method_name="swapVerify", parameter_name="_r", argument_value=r,
+        )
+        self.validator.assert_valid(
+            method_name="swapVerify", parameter_name="_s", argument_value=s,
+        )
+        return (swap, nonce, expiry, v, r, s)
+
+    def call(
+        self,
+        swap: SwapLibSwap,
+        nonce: int,
+        expiry: int,
+        v: int,
+        r: Union[bytes, str],
+        s: Union[bytes, str],
+        tx_params: Optional[TxParams] = None,
+    ) -> str:
+        """Execute underlying contract method via eth_call.
+
+        :param tx_params: transaction parameters
+        :returns: the return value of the underlying method.
+        """
+        (swap, nonce, expiry, v, r, s) = self.validate_and_normalize_inputs(
+            swap, nonce, expiry, v, r, s
+        )
+        tx_params = super().normalize_tx_params(tx_params)
+        returned = self._underlying_method(swap, nonce, expiry, v, r, s).call(
+            tx_params.as_dict()
+        )
+        return str(returned)
+
+    def send_transaction(
+        self,
+        swap: SwapLibSwap,
+        nonce: int,
+        expiry: int,
+        v: int,
+        r: Union[bytes, str],
+        s: Union[bytes, str],
+        tx_params: Optional[TxParams] = None,
+    ) -> Union[HexBytes, bytes]:
+        """Execute underlying contract method via eth_sendTransaction.
+
+        :param tx_params: transaction parameters
+        """
+        (swap, nonce, expiry, v, r, s) = self.validate_and_normalize_inputs(
+            swap, nonce, expiry, v, r, s
+        )
+        tx_params = super().normalize_tx_params(tx_params)
+        return self._underlying_method(swap, nonce, expiry, v, r, s).transact(
+            tx_params.as_dict()
+        )
+
+    def build_transaction(
+        self,
+        swap: SwapLibSwap,
+        nonce: int,
+        expiry: int,
+        v: int,
+        r: Union[bytes, str],
+        s: Union[bytes, str],
+        tx_params: Optional[TxParams] = None,
+    ) -> dict:
+        """Construct calldata to be used as input to the method."""
+        (swap, nonce, expiry, v, r, s) = self.validate_and_normalize_inputs(
+            swap, nonce, expiry, v, r, s
+        )
+        tx_params = super().normalize_tx_params(tx_params)
+        return self._underlying_method(swap, nonce, expiry, v, r, s).buildTransaction(
+            tx_params.as_dict()
+        )
+
+    def estimate_gas(
+        self,
+        swap: SwapLibSwap,
+        nonce: int,
+        expiry: int,
+        v: int,
+        r: Union[bytes, str],
+        s: Union[bytes, str],
+        tx_params: Optional[TxParams] = None,
+    ) -> int:
+        """Estimate gas consumption of method call."""
+        (swap, nonce, expiry, v, r, s) = self.validate_and_normalize_inputs(
+            swap, nonce, expiry, v, r, s
+        )
+        tx_params = super().normalize_tx_params(tx_params)
+        return self._underlying_method(swap, nonce, expiry, v, r, s).estimateGas(
+            tx_params.as_dict()
+        )
 
 
 class TransferOwnershipMethod(ContractMethod):
@@ -1754,7 +1877,6 @@ class SwapMethod(ContractMethod):
         )
 
 
-# pylint: disable=too-many-public-methods,too-many-instance-attributes
 class Implementation:
     """Wrapper class for Implementation Solidity contract.
 
@@ -1795,6 +1917,11 @@ class Implementation:
     signer_nonces: SignerNoncesMethod
     """Constructor-initialized instance of
     :class:`SignerNoncesMethod`.
+    """
+
+    swap_verify: SwapVerifyMethod
+    """Constructor-initialized instance of
+    :class:`SwapVerifyMethod`.
     """
 
     transfer_ownership: TransferOwnershipMethod
@@ -1895,7 +2022,6 @@ class Implementation:
         :param contract_address: where the contract has been deployed
         :param validator: for validation of method inputs.
         """
-        # pylint: disable=too-many-statements
 
         self.contract_address = contract_address
 
@@ -1958,6 +2084,10 @@ class Implementation:
 
         self.signer_nonces = SignerNoncesMethod(
             web3_or_provider, contract_address, functions.signerNonces, validator,
+        )
+
+        self.swap_verify = SwapVerifyMethod(
+            web3_or_provider, contract_address, functions.swapVerify, validator
         )
 
         self.transfer_ownership = TransferOwnershipMethod(
@@ -2049,8 +2179,5 @@ class Implementation:
     def abi():
         """Return the ABI to the underlying contract."""
         return json.loads(
-            '[{"inputs":[{"internalType":"address","name":"_account","type":"address"},{"internalType":"address","name":"_token","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"inputs":[],"name":"DOMAIN_SEPARATOR","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function","constant":true},{"inputs":[],"name":"EIP712_DOMAIN_TYPEHASH","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function","constant":true},{"inputs":[],"name":"SWAP_TYPEHASH","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function","constant":true},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function","constant":true},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function","constant":true},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"index_0","type":"address"}],"name":"signerNonces","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function","constant":true},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"_name","type":"string"}],"name":"register","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_acc","type":"address"},{"internalType":"string","name":"_name","type":"string"}],"name":"addSubAccount","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_acc","type":"address"}],"name":"suspendAccount","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_acc","type":"address"}],"name":"reactivateAccount","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_acc","type":"address"}],"name":"blacklistAccount","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_acc","type":"address"}],"name":"recoverAccount","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_operator","type":"address"}],"name":"authorizeOperator","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_operator","type":"address"}],"name":"revokeOperator","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"_uri","type":"string"},{"internalType":"bool","name":"_isNF","type":"bool"},{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"create","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address[]","name":"_to","type":"address[]"},{"internalType":"uint256","name":"_id","type":"uint256"},{"internalType":"uint256[]","name":"_amounts","type":"uint256[]"},{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"mintFungible","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address[]","name":"_to","type":"address[]"},{"internalType":"uint256","name":"_type","type":"uint256"},{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"mintNonFungible","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_to","type":"address"},{"internalType":"uint256[]","name":"_ids","type":"uint256[]"},{"internalType":"uint256[]","name":"_amounts","type":"uint256[]"},{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"send","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_from","type":"address"},{"internalType":"address","name":"_to","type":"address"},{"internalType":"uint256[]","name":"_ids","type":"uint256[]"},{"internalType":"uint256[]","name":"_amounts","type":"uint256[]"},{"internalType":"bytes","name":"_data","type":"bytes"},{"internalType":"bytes","name":"_operatorData","type":"bytes"}],"name":"operatorSend","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256[]","name":"_ids","type":"uint256[]"},{"internalType":"uint256[]","name":"_amounts","type":"uint256[]"},{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_from","type":"address"},{"internalType":"uint256[]","name":"_ids","type":"uint256[]"},{"internalType":"uint256[]","name":"_amounts","type":"uint256[]"},{"internalType":"bytes","name":"_data","type":"bytes"},{"internalType":"bytes","name":"_operatorData","type":"bytes"}],"name":"operatorBurn","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"components":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"uint256[]","name":"senderTokenIds","type":"uint256[]"},{"internalType":"uint256[]","name":"senderTokenAmounts","type":"uint256[]"},{"internalType":"uint256[]","name":"signerTokenIds","type":"uint256[]"},{"internalType":"uint256[]","name":"signerTokenAmounts","type":"uint256[]"}],"internalType":"struct SwapLib.Swap","name":"_swap","type":"tuple"},{"internalType":"uint256","name":"_nonce","type":"uint256"},{"internalType":"uint256","name":"_expiry","type":"uint256"},{"internalType":"uint8","name":"_v","type":"uint8"},{"internalType":"bytes32","name":"_r","type":"bytes32"},{"internalType":"bytes32","name":"_s","type":"bytes32"},{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"swap","outputs":[],"stateMutability":"nonpayable","type":"function"}]'  # noqa: E501 (line-too-long)
+            '[{"inputs":[{"internalType":"address","name":"_account","type":"address"},{"internalType":"address","name":"_token","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"inputs":[],"name":"DOMAIN_SEPARATOR","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function","constant":true},{"inputs":[],"name":"EIP712_DOMAIN_TYPEHASH","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function","constant":true},{"inputs":[],"name":"SWAP_TYPEHASH","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function","constant":true},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function","constant":true},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function","constant":true},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"index_0","type":"address"}],"name":"signerNonces","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function","constant":true},{"inputs":[{"components":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"uint256[]","name":"senderTokenIds","type":"uint256[]"},{"internalType":"uint256[]","name":"senderTokenAmounts","type":"uint256[]"},{"internalType":"uint256[]","name":"signerTokenIds","type":"uint256[]"},{"internalType":"uint256[]","name":"signerTokenAmounts","type":"uint256[]"}],"internalType":"struct SwapLib.Swap","name":"_swap","type":"tuple"},{"internalType":"uint256","name":"_nonce","type":"uint256"},{"internalType":"uint256","name":"_expiry","type":"uint256"},{"internalType":"uint8","name":"_v","type":"uint8"},{"internalType":"bytes32","name":"_r","type":"bytes32"},{"internalType":"bytes32","name":"_s","type":"bytes32"}],"name":"swapVerify","outputs":[{"internalType":"address","name":"signer_","type":"address"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"_name","type":"string"}],"name":"register","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_acc","type":"address"},{"internalType":"string","name":"_name","type":"string"}],"name":"addSubAccount","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_acc","type":"address"}],"name":"suspendAccount","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_acc","type":"address"}],"name":"reactivateAccount","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_acc","type":"address"}],"name":"blacklistAccount","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_acc","type":"address"}],"name":"recoverAccount","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_operator","type":"address"}],"name":"authorizeOperator","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_operator","type":"address"}],"name":"revokeOperator","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"_uri","type":"string"},{"internalType":"bool","name":"_isNF","type":"bool"},{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"create","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address[]","name":"_to","type":"address[]"},{"internalType":"uint256","name":"_id","type":"uint256"},{"internalType":"uint256[]","name":"_amounts","type":"uint256[]"},{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"mintFungible","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address[]","name":"_to","type":"address[]"},{"internalType":"uint256","name":"_type","type":"uint256"},{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"mintNonFungible","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_to","type":"address"},{"internalType":"uint256[]","name":"_ids","type":"uint256[]"},{"internalType":"uint256[]","name":"_amounts","type":"uint256[]"},{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"send","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_from","type":"address"},{"internalType":"address","name":"_to","type":"address"},{"internalType":"uint256[]","name":"_ids","type":"uint256[]"},{"internalType":"uint256[]","name":"_amounts","type":"uint256[]"},{"internalType":"bytes","name":"_data","type":"bytes"},{"internalType":"bytes","name":"_operatorData","type":"bytes"}],"name":"operatorSend","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256[]","name":"_ids","type":"uint256[]"},{"internalType":"uint256[]","name":"_amounts","type":"uint256[]"},{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_from","type":"address"},{"internalType":"uint256[]","name":"_ids","type":"uint256[]"},{"internalType":"uint256[]","name":"_amounts","type":"uint256[]"},{"internalType":"bytes","name":"_data","type":"bytes"},{"internalType":"bytes","name":"_operatorData","type":"bytes"}],"name":"operatorBurn","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"components":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"uint256[]","name":"senderTokenIds","type":"uint256[]"},{"internalType":"uint256[]","name":"senderTokenAmounts","type":"uint256[]"},{"internalType":"uint256[]","name":"signerTokenIds","type":"uint256[]"},{"internalType":"uint256[]","name":"signerTokenAmounts","type":"uint256[]"}],"internalType":"struct SwapLib.Swap","name":"_swap","type":"tuple"},{"internalType":"uint256","name":"_nonce","type":"uint256"},{"internalType":"uint256","name":"_expiry","type":"uint256"},{"internalType":"uint8","name":"_v","type":"uint8"},{"internalType":"bytes32","name":"_r","type":"bytes32"},{"internalType":"bytes32","name":"_s","type":"bytes32"},{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"swap","outputs":[],"stateMutability":"nonpayable","type":"function"}]'  # noqa: E501 (line-too-long)
         )
-
-
-# pylint: disable=too-many-lines

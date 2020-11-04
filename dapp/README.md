@@ -13,7 +13,7 @@ TODO
 - Python **[3.8](https://docs.python.org/)**.
 - Django **[3.0.7](https://docs.djangoproject.com/)**, installed via [pip](https://pypi.python.org/pypi) - official Python package index.
 - Postgres **[11.3](https://www.postgresql.org/)**, installed via [official Docker image](https://hub.docker.com/_/postgres).
-- Authentication using [Simple JWT](https://django-rest-framework-simplejwt.readthedocs.io/en/latest/index.html) and [python-social-auth](https://python-social-auth.readthedocs.io/en/latest/configuration/django.html#).
+- Authentication using [Simple JWT](https://django-rest-framework-simplejwt.readthedocs.io/en/latest/index.html).
 - User management using [djoser](https://djoser.readthedocs.io/en/latest/index.html).
 
 ---

@@ -68,12 +68,13 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "djoser",
-    "social_django",
 ]
 
 LOCAL_APPS = [
     "app.account.apps.AccountConfig",
-    "app.social.apps.ImplementationConfig",
+    "app.ethimplementation.apps.EthImplementationConfig",
+    "app.ethaccount.apps.EthAccountConfig",
+    "app.ethtoken.apps.EthTokenConfig",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -88,8 +89,6 @@ MIGRATION_MODULES = {"sites": "app.contrib.sites.migrations"}
 # https://docs.djangoproject.com/en/dev/ref/settings/#authentication-backends
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
-    "djoser.social.backends.facebook.FacebookOAuth2Override",
-    # "social_core.backends.facebook.FacebookOAuth2",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#auth-user-model
 AUTH_USER_MODEL = "account.User"
