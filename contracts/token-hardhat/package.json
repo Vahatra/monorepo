@@ -15,7 +15,7 @@
   "dependencies": {
     "@0x/abi-gen": "^5.4.8",
     "@opengsn/gsn": "^2.0.1",
-    "@openzeppelin/contracts": "^3.2.0",
+    "@openzeppelin/contracts": "^4.4.2",
     "ethereumjs-abi": "^0.6.8",
     "ethereumjs-util": "^7.0.7"
   },

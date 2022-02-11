@@ -13,7 +13,7 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
-    "@openzeppelin/contracts": "^3.2.0"
+    "@openzeppelin/contracts": "^4.4.2"
   },
   "devDependencies": {
     "truffle": "^5.1.44"
